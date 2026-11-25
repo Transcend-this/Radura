@@ -1,0 +1,1357 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DayGuard: energy plan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* VOICE: calm, plain, warm; morning reads last night back to him; nothing to type unless he wants to
+   IDEA: a daily care log that budgets energy like a battery and remembers every day
+   PICTURE: the battery with its projected charge across the next hours, beside the time-blocked plan
+   COLOUR and TYPE: deep clinic blue, white paper, amber for energy, red only for urgent; Public Sans, large
+   LAYOUT: air + tabs; Check in | Log my day | History | Report; big tap targets throughout */
+:root{color-scheme:light dark;--bg:light-dark(#fff,#0e171e);--ink:light-dark(#13212b,#e4ebf0);--mute:light-dark(#4f5f6b,#9aabb8);--line:light-dark(#d7dee4,#2a3a46);--blue:light-dark(#1d4f7a,#8dbbe4);--head:light-dark(#173f63,#0b2236);--sel:light-dark(#e6eff7,#163049);--red:light-dark(#b8322a,#ff8f83);--redbg:light-dark(#fbeae8,#3a1714);--amber:light-dark(#9a5a00,#f0b45a);--ambg:light-dark(#fdf3e3,#33260f);--card:light-dark(#f5f8fa,#13202a);--ok:light-dark(#1d6b45,#7fd3a6);--s1:light-dark(#2a78d6,#3987e5);--q1:light-dark(#d6e6f8,#1d3550);--q2:light-dark(#7fb0eb,#2f6bb5);--q3:light-dark(#2a78d6,#6aa6ee)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.55 "Public Sans",system-ui,sans-serif;overflow-x:clip}
+.band{padding:clamp(20px,3.5vw,44px) max(5vw,16px)}.wrap{max-width:1240px;margin:0 auto}
+h1,h2,h3{line-height:1.12;text-wrap:balance;margin:0}
+h1{font-size:clamp(30px,4.6vw,44px);font-weight:800}h2{font-size:clamp(22px,2.6vw,28px);font-weight:700}h3{font-size:18px;font-weight:700}
+small,.mute{color:var(--mute)}small{font-size:14px}
+header{background:var(--head);color:#fff}header p{max-width:68ch;margin:8px 0 0;color:#d6e3ee}
+.tag{display:inline-block;font-size:13px;font-weight:600;background:#ffffff22;border-radius:999px;padding:3px 10px;margin-bottom:10px}
+.top{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:16px;margin-top:18px}
+.air{display:grid;grid-template-columns:auto minmax(0,1fr);gap:16px;align-items:center;background:#ffffff14;border:1px solid #ffffff33;border-radius:16px;padding:14px 16px}
+.aqi{width:84px;height:84px;border-radius:50%;display:grid;place-content:center;text-align:center;color:#fff}
+.aqi b{font-size:30px;line-height:1}.aqi span{font-size:12px;font-weight:700}
+.air h2{font-size:19px;color:#fff}.air p{margin:4px 0 0;font-size:14px;color:#d6e3ee}.air .facts{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:6px;font-size:14px;color:#fff}.air .facts span{white-space:nowrap}
+.air a{color:#fff}
+.store{background:#ffffff14;border:1px solid #ffffff33;border-radius:16px;padding:14px 16px;font-size:15px}.store b{display:block;font-size:17px;color:#fff}.store p{margin:4px 0 0;color:#d6e3ee}
+nav.tabs{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
+nav.tabs .wrap{display:flex;gap:6px;overflow-x:auto;padding:8px max(5vw,16px)}
+nav.tabs a{flex:none;display:inline-flex;align-items:center;min-height:52px;padding:0 18px;border-radius:12px;font-weight:700;color:var(--ink);text-decoration:none;border:1px solid var(--line)}
+nav.tabs a[aria-current=page]{background:var(--blue);color:var(--bg);border-color:var(--blue)}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,a:focus-visible,label.chk:has(input:focus-visible){outline:3px solid var(--blue);outline-offset:2px}
+.view[hidden]{display:none}.jump{display:none}@media(max-width:960px){.jump{display:block}}
+.main{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:clamp(20px,3vw,36px);align-items:start}
+fieldset{border:1px solid var(--line);border-radius:14px;padding:14px 16px 16px;margin:0 0 14px}
+legend{font-weight:700;padding:0 6px;font-size:18px}
+.hint{font-size:14px;color:var(--mute);margin:0 0 8px}
+.q{font-weight:700;font-size:15px;margin:12px 0 4px}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg label,label.chk{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:12px;padding:8px 14px;min-height:52px;cursor:pointer;font-size:16px;background:var(--bg)}
+.seg input,label.chk input{accent-color:var(--blue);width:20px;height:20px;margin:0;flex:none}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg label:has(input:checked),label.chk:has(input:checked){background:var(--sel);border-color:var(--blue);font-weight:700}
+.seg label:has(input:focus-visible){outline:3px solid var(--blue);outline-offset:2px}
+.nums label{min-width:52px;justify-content:center;padding:8px 0}
+.checks{display:flex;flex-wrap:wrap;gap:8px}
+.red label.chk{border-color:light-dark(#e6b5b0,#5a2a25)}.red label.chk:has(input:checked){background:var(--redbg);border-color:var(--red)}
+.btn{font-weight:700;font-size:17px;line-height:1.1;font-family:inherit;background:var(--blue);color:var(--bg);border:0;border-radius:12px;padding:0 22px;min-height:56px;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--blue);border:1px solid var(--blue);min-height:48px;font-size:15px;padding:0 16px}
+.btn:disabled{opacity:.5;cursor:default}
+.saved{font-size:15px;color:var(--ok);font-weight:700;margin-left:10px}
+textarea,input[type=date],select{font:inherit;font-size:16px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);min-height:52px;width:100%}
+textarea{min-height:90px;resize:vertical}
+.fuelbox{border:1px solid var(--line);border-radius:14px;padding:12px 16px;margin:0 0 14px}.fuelbox summary{font-weight:700;font-size:18px;min-height:40px}.fuelbox summary small{font-weight:400}
+.glance{display:grid;grid-template-columns:7.5em repeat(7,minmax(0,1fr));gap:8px 6px;align-items:center;text-align:center;font-size:14px}
+.glance .rl{text-align:left;font-weight:700;color:var(--mute);font-size:13px}.glance .dl{font-size:13px;color:var(--mute)}
+.ring{width:min(56px,100%);aspect-ratio:1;border-radius:50%;margin:0 auto;display:grid;place-content:center;font-weight:800;font-size:14px;background:conic-gradient(var(--s1) calc(var(--v)*1%),var(--line) 0);position:relative}
+.ring::before{content:"";position:absolute;inset:6px;border-radius:50%;background:var(--bg)}.ring span{position:relative}
+.dot{width:min(44px,100%);aspect-ratio:1;border-radius:50%;margin:0 auto;display:grid;place-content:center;font-weight:800;color:var(--ink)}
+.mini{height:10px;background:var(--line);border-radius:5px;overflow:hidden}.mini i{display:block;height:100%;background:var(--s1)}
+.snap{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:14px 0 4px;text-align:center;font-size:13px;color:var(--mute)}.snap b{display:block;color:var(--ink);font-size:14px;margin-top:4px}
+.gaps{margin:12px 0 0;padding:12px 14px;border-left:4px solid var(--s1);background:var(--card);border-radius:0 12px 12px 0;font-size:15px}.gaps p{margin:4px 0 0}
+@media(max-width:600px){.glance{grid-template-columns:4.8em repeat(7,minmax(0,1fr));gap:6px 3px;font-size:11px}.glance small{font-size:10px}.glance .rl{font-size:11px}.ring{font-size:9.5px}.dot{font-size:12px}.ring::before{inset:4px}.snap{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.prompt{border:2px solid var(--amber);background:var(--ambg);border-radius:14px;padding:14px 16px;margin:0 0 14px}
+.prompt h3{color:var(--amber)}
+#plan{position:sticky;top:84px;border:1px solid var(--line);border-radius:16px;padding:clamp(16px,2.4vw,26px);background:var(--bg)}
+.bat{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 16px;align-items:center}
+.cells{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:4px;border:2px solid var(--ink);border-radius:8px;padding:4px;position:relative;margin-right:10px}
+.cells::after{content:"";position:absolute;right:-10px;top:30%;width:6px;height:40%;background:var(--ink);border-radius:0 3px 3px 0}
+.cells i{height:34px;border-radius:3px;background:var(--line);position:relative}.cells i.on{background:var(--amber)}.cells.low i.on{background:var(--red)}.cells.hi i.on{background:var(--ok)}
+.cells i.cap{outline:2px dashed var(--ink);outline-offset:1px}
+.bat b{font-size:22px;white-space:nowrap}.bat p{grid-column:1/-1;margin:0;font-size:15px;color:var(--mute)}
+.proj{margin:14px 0 4px}.proj svg{width:100%;height:92px;display:block}
+.proj .lab{font-size:13px;color:var(--mute);display:flex;justify-content:space-between;gap:8px}
+.blocks{list-style:none;padding:0;margin:14px 0 0}
+.blocks li{display:grid;grid-template-columns:5.6em minmax(0,1fr) auto;gap:4px 12px;padding:12px 0;border-top:1px solid var(--line)}
+.blocks time{font-weight:800;font-size:16px;white-space:nowrap}
+.blocks h3{font-size:17px}.blocks p{margin:3px 0 0;font-size:15px}
+.cost{font-size:13px;font-weight:800;border-radius:999px;padding:3px 9px;white-space:nowrap;align-self:start}
+.cost.minus{background:var(--ambg);color:var(--amber)}.cost.plus{background:light-dark(#e7f4ec,#12301f);color:var(--ok)}.cost.zero{background:var(--card);color:var(--mute)}
+.blocks li.rest h3{color:var(--ok)}
+.notes{margin:12px 0 0;padding:12px 14px;background:var(--card);border-radius:12px;font-size:15px}.notes p{margin:4px 0 0}
+.card{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:10px 0 0}
+.card.warn{border-color:var(--amber);background:var(--ambg)}.card p{margin:4px 0 0;font-size:15px}
+.emerg{background:var(--redbg);border:2px solid var(--red);border-radius:14px;padding:20px}.emerg h2{color:var(--red);font-size:clamp(28px,4vw,40px)}.emerg p{margin:10px 0 0}.emerg .big{font-size:20px;font-weight:700}
+.alert{border:2px solid var(--amber);background:var(--ambg);border-radius:12px;padding:14px 16px;margin:12px 0}.alert h3{color:var(--amber)}.alert p{margin:6px 0 0}
+.range{display:flex;flex-wrap:wrap;gap:10px;align-items:end;margin:0 0 18px}
+.range .fld{width:11em}.range label{font-size:14px;font-weight:700;display:block}
+.charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:18px}
+.ch{border:1px solid var(--line);border-radius:14px;padding:14px 16px;position:relative}
+.ch h3{font-size:16px}.ch p.sum{margin:2px 0 6px;font-size:14px;color:var(--mute)}
+.fig{position:relative;height:200px}.fig>svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.fig.short{height:120px}
+.tip{position:fixed;pointer-events:none;z-index:20;background:var(--ink);color:var(--bg);font-size:13px;padding:6px 9px;border-radius:8px;white-space:nowrap;display:none}
+.pbar{display:grid;grid-template-columns:minmax(0,13em) minmax(0,1fr) 3.6em;gap:10px;align-items:center;margin:8px 0;font-size:15px}
+.pbar .tr{height:16px;background:var(--card);border-radius:4px;position:relative}.pbar .fl{height:100%;background:var(--s1);border-radius:0 4px 4px 0}
+.pbar .base{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--ink)}
+.pbar b{text-align:right;font-variant-numeric:tabular-nums}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--mute);margin-top:8px}.legend i{display:inline-block;width:14px;height:14px;border-radius:3px;vertical-align:-2px;margin-right:5px}
+table{width:100%;border-collapse:collapse;font-size:15px}th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}th{font-size:13px;color:var(--mute)}
+td.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.empty{background:var(--card);border-radius:14px;padding:20px}
+.sampleban{background:var(--ambg);border:1px solid var(--amber);border-radius:12px;padding:10px 14px;margin:0 0 14px;font-weight:600}
+.papers{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px;margin-top:12px}
+.paper{display:block;border:1px solid var(--line);border-radius:12px;padding:12px 14px;color:var(--ink);text-decoration:none;background:var(--card)}
+.paper b{display:block;font-size:15px;line-height:1.3;color:var(--blue)}.paper p{margin:6px 0 0;font-size:14px}.paper .src{display:block;font-size:13px;color:var(--mute);margin-top:6px}
+details{border:1px solid var(--line);border-radius:14px;padding:12px 16px;margin-top:14px}summary{cursor:pointer;font-weight:700;min-height:32px}
+footer{font-size:14px;color:var(--mute);margin-top:22px}
+pre,.scroll{overflow-x:auto}code{overflow-wrap:anywhere}
+@media(max-width:960px){.main{grid-template-columns:minmax(0,1fr)}#plan{position:static}.top{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:520px){.air{grid-template-columns:minmax(0,1fr)}.blocks li{grid-template-columns:minmax(0,1fr) auto}.blocks li>div{grid-column:1/-1;grid-row:2}.pbar{grid-template-columns:minmax(0,1fr) 3.4em}.pbar .tr{grid-column:1/-1;grid-row:2}}
+@media(prefers-reduced-motion:no-preference){.blocks li,.emerg,.alert{animation:in .25s ease-out}@keyframes in{from{opacity:0;transform:translateY(4px)}}}
+@media(max-width:600px){table{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-block:10px;border-bottom:1px solid var(--line)}.stack td{display:flow-root;border:0;padding:3px 0;padding-inline-start:8em;text-align:start}.stack td::before{content:attr(data-l);float:inline-start;width:7.5em;margin-inline-start:-8em;white-space:normal;color:var(--mute);font-weight:600}.stack td:empty{display:none}}
+.modehead{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 20px;margin-bottom:14px}
+.modehead p{margin:4px 0 0;color:var(--mute);max-width:70ch}
+.ylog{border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin:14px 0 0}
+.ylog h3{font-size:17px}.ylog p{margin:6px 0 0;font-size:15px}
+.link{display:grid;grid-template-columns:22px minmax(0,1fr);gap:8px;margin-top:8px;font-size:15px}
+.link i{width:14px;height:14px;border-radius:50%;margin-top:5px;background:var(--s1)}.link.risk i{background:var(--amber)}.link.good i{background:var(--ok)}
+.verdict{margin-top:10px;font-weight:700}
+.head{margin:12px 0 0;padding:12px 14px;border-left:4px solid var(--ok);background:var(--card);border-radius:0 12px 12px 0;font-size:15px}.head p{margin:4px 0 0}
+.pzcard{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin:14px 0 0;background:var(--card)}
+.pzcard .ico{width:46px;height:46px;border-radius:12px;background:var(--s1);display:grid;place-content:center}
+.pzcard .ico svg{width:28px;height:28px}
+.pzcard p{margin:2px 0 0;font-size:14px;color:var(--mute)}
+/* puzzle */
+.pzwrap{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:clamp(20px,3vw,36px);align-items:start}
+.stage{border:1px solid var(--line);border-radius:16px;padding:clamp(16px,2.4vw,26px);min-height:420px}
+.stage h2{margin-bottom:6px}.stage .lead{color:var(--mute);margin:0 0 14px}
+.prog{height:8px;background:var(--line);border-radius:4px;overflow:hidden;margin:0 0 16px}.prog i{display:block;height:100%;background:var(--s1)}
+.pair{display:flex;gap:clamp(14px,4vw,40px);justify-content:center;margin:8px 0 18px}
+.pg{display:grid;gap:4px;padding:6px;border:2px solid var(--ink);border-radius:10px}
+.pg i{width:clamp(26px,7vw,40px);aspect-ratio:1;border-radius:4px;background:var(--q1)}.pg i.on{background:var(--ink)}
+.big2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.big2 button,.ans{font-weight:800;font-size:20px;line-height:1.1;font-family:inherit;min-height:72px;border-radius:14px;border:2px solid var(--blue);background:var(--bg);color:var(--blue);cursor:pointer}
+.big2 button:active,.ans:active{background:var(--sel)}
+.sgrid{display:grid;gap:6px;margin:0 auto 14px;max-width:460px}
+.sgrid button{aspect-ratio:1;min-height:44px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:clamp(18px,5vw,26px);cursor:pointer;padding:0;font-family:inherit}
+.sgrid button.mk{background:var(--sel);border:2px solid var(--blue)}
+.sgrid button.hit{background:light-dark(#e7f4ec,#12301f);border:2px solid var(--ok)}.sgrid button.miss{border:2px dashed var(--amber)}.sgrid button.fa{background:var(--ambg)}
+.sgrid button.lit{background:var(--s1)}
+.stim{display:flex;flex-direction:column;align-items:center;gap:10px;margin:6px 0 18px}
+.cue{font-weight:800;font-size:22px;letter-spacing:.02em;padding:6px 16px;border-radius:999px;background:var(--card)}
+.stim svg{width:120px;height:120px}
+.words{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:10px 0 18px}
+.words span{font-size:24px;font-weight:700;padding:10px 16px;border-radius:12px;background:var(--card)}
+.wpick{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:14px}
+.wpick label{display:flex;align-items:center;gap:8px;min-height:56px;border:1px solid var(--line);border-radius:12px;padding:0 14px;font-size:18px;cursor:pointer}
+.wpick input{width:22px;height:22px;accent-color:var(--blue)}.wpick label:has(input:checked){background:var(--sel);border-color:var(--blue);font-weight:700}
+.result{font-size:clamp(40px,8vw,64px);font-weight:800;line-height:1}
+.fb{min-height:28px;font-weight:700;text-align:center;margin:-6px 0 10px}.fb.ok{color:var(--ok)}.fb.no{color:var(--amber)}
+.science p{margin:8px 0 0;font-size:15px}.science ul{margin:8px 0 0;padding-left:20px;font-size:15px}
+.done{display:inline-block;font-size:13px;font-weight:800;border-radius:999px;padding:3px 10px;background:light-dark(#e7f4ec,#12301f);color:var(--ok)}
+#review{position:sticky;top:84px}@media(max-width:960px){.pzwrap{grid-template-columns:minmax(0,1fr)}}
+.clock{margin:14px 0 0;border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.clock h3{font-size:17px}.clock .sub{margin:2px 0 8px;font-size:14px;color:var(--mute)}
+.tl{position:relative;height:70px;margin:8px 0 4px}.tl svg{position:absolute;left:0;right:0;top:0;width:100%;height:50px}
+.tlx{position:absolute;left:0;right:0;bottom:0;height:18px;font-size:12px;color:var(--mute)}.tlx span{position:absolute;transform:translateX(-50%);white-space:nowrap}.tlx span:last-child{transform:translateX(-100%)}
+.tlk{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:13px;color:var(--mute)}.tlk i{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-1px;margin-right:5px}
+.crow{display:grid;grid-template-columns:7.2em minmax(0,1fr);gap:2px 12px;padding:8px 0;border-top:1px solid var(--line);font-size:15px}
+.crow b{white-space:nowrap}.crow span small{display:block}
+.corrctl{display:flex;flex-wrap:wrap;gap:14px 24px;margin:10px 0 12px}.corrctl .seg label{min-height:44px;padding:6px 12px;font-size:15px}.corrctl .checks label.chk{min-height:44px;padding:6px 12px;font-size:15px}
+.corrfig{overflow-x:auto;margin:6px 0}.corrfig svg{display:block}
+.corrfig .cell{cursor:pointer}.corrfig .cell:focus{outline:none}.corrfig .cell:focus rect.bg,.corrfig .cell:hover rect.bg{stroke:var(--ink);stroke-width:2}
+.corrleg{display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px;font-size:13px;color:var(--mute)}.corrleg .grad{width:180px;height:12px;border-radius:3px;background:linear-gradient(90deg,var(--neg),var(--mid) 50%,var(--pos))}
+.corrdet{border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-top:12px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
+.corrdet .big{font-size:40px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}.corrdet p{margin:6px 0 0;font-size:15px}
+.corrdet .stat{font-size:14px;color:var(--mute);font-variant-numeric:tabular-nums}
+.verd{border-radius:10px;padding:8px 12px;margin-top:8px;font-size:14px;font-weight:600}.verd.ok{background:light-dark(#e7f4ec,#12301f);color:var(--ok)}.verd.mid{background:var(--ambg);color:var(--amber)}.verd.no{background:var(--card);color:var(--mute)}
+.corrdet .sc{position:relative;height:240px}.corrdet .sc svg{position:absolute;inset:0;width:100%;height:100%}
+.toplist{margin-top:12px}.toplist button{all:unset;cursor:pointer;display:grid;grid-template-columns:4.2em minmax(0,1fr) auto;gap:10px;align-items:center;width:100%;padding:9px 4px;border-top:1px solid var(--line);font-size:15px}.toplist button:focus-visible{outline:3px solid var(--blue)}
+.toplist .rv{font-weight:800;font-variant-numeric:tabular-nums;text-align:right}.toplist small{white-space:nowrap}
+:root{--pos:light-dark(#2a78d6,#3987e5);--neg:light-dark(#e34948,#e66767);--mid:light-dark(#f0efec,#383835)}
+@media(max-width:700px){.corrdet{grid-template-columns:minmax(0,1fr)}}
+.qotd{margin:16px 0 0;max-width:62ch;border-left:4px solid #ffffff88;padding:2px 0 2px 16px}
+.qotd p{margin:0;color:#fff;font-size:clamp(18px,2.2vw,22px);line-height:1.35;font-weight:600;text-wrap:balance}
+.qotd cite{display:block;margin-top:6px;font-style:normal;font-size:14px;color:#d6e3ee}
+.idea{margin:14px 0 0;border:1px solid var(--line);border-radius:14px;padding:14px 16px;background:linear-gradient(180deg,var(--sel),var(--bg))}
+.idea .k{font-size:13px;font-weight:800;color:var(--blue)}.idea h3{margin-top:2px}.idea p{margin:6px 0 0;font-size:15px}
+.idea .ev{display:inline-block;font-size:12px;font-weight:800;border-radius:999px;padding:2px 9px;background:var(--card);color:var(--mute);margin-top:8px}
+.movies{list-style:none;padding:0;margin:8px 0 0}.movies li{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;padding:10px 0;border-top:1px solid var(--line)}
+.movies .yr{font-weight:800;font-variant-numeric:tabular-nums;color:var(--mute);font-size:14px;padding-top:2px}.movies b{display:block}.movies small{display:block}.movies p{margin:2px 0 0;font-size:14px}
+.aiq{display:grid;gap:8px;margin:10px 0 6px}.aiq label{display:grid;grid-template-columns:22px minmax(0,1fr);gap:10px;align-items:start;border:1px solid var(--line);border-radius:12px;padding:12px 14px;cursor:pointer;font-size:16px}
+.aiq input{width:20px;height:20px;margin-top:2px;accent-color:var(--blue)}.aiq label:has(input:checked){background:var(--sel);border-color:var(--blue)}.aiq b{display:block}.aiq small{display:block;margin-top:2px}
+.aiout textarea{min-height:220px;font-size:13px;font-family:ui-monospace,Menlo,Consolas,monospace}@media(max-width:960px){#review{position:static}}
+</style><script>new MutationObserver(()=>{for(const c of document.querySelectorAll('.stack td:not([data-l])')){let i=0,p=c;while(p=p.previousElementSibling)i+=p.colSpan;c.dataset.l=c.closest('table').rows[0].cells[i]?.textContent||''}}).observe(document,{childList:true,subtree:true})</script></head><body>
+
+<!--LIVE DATA: replaced on each scheduled run. Keep valid JSON.-->
+<script id="live" type="application/json">
+{"run":"2026-11-24T18:30:00-06:00",
+ "air":{"place":"Colbert, OK","aqi":17,"category":"Good","pollutant":"PM2.5","pm25":3.7,"pm10":18.8,"o3":23,"time":"Nov 24, 5:00 PM CT","tempF":39,"tempTime":"3:00 PM","source":"WeatherBug (modeled; Colbert has no ground monitor). IQAir's satellite model read AQI 13 at 3 PM.","url":"https://www.weatherbug.com/air-quality/colbert-ok-74733"},
+ "window":"Nov 10–24, 2026 (fewer than 3 strong matches in the last 7 days, so the window widened to 14)",
+ "papers":[
+  {"t":"Mapping the evidence on exercise and sleep in neurologic disorders: a scoping review","w":"Frontiers in Neurology · Nov 24, 2026","n":"Aerobic and mixed exercise were the most studied; MS and Parkinson's were the most common conditions. Sleep gains were real in many studies but not consistent across every sleep measure.","fit":"Supports pairing regular, paced movement with your sleep plan, while being realistic about how much it changes sleep.","tag":"Exercise · sleep","u":"https://www.frontiersin.org/journals/neurology/articles/10.3389/fneur.2026.1993880/full"},
+  {"t":"Exercise in multiple sclerosis: mechanisms, clinical benefits, potential disease-modifying effects and practical recommendations","w":"Int. Journal of Molecular Sciences · Nov 10, 2026 · review","n":"Reviews how aerobic, resistance and interval training act on neuroinflammation, neuroprotection and plasticity, with practical prescriptions.","fit":"The most direct read on how exercise may help an MS-type nervous system heal, not just cope.","tag":"Exercise · healing","u":"https://doi.org/10.3390/ijms272210066"},
+  {"t":"Factors associated with fatigue in lupus: social support, sleep and depression pathways","w":"Frontiers in Medicine · Nov 10, 2026","n":"Social support and sleep disturbance both linked to fatigue through depressive symptoms; pain and employment also mattered.","fit":"Fatigue in autoimmune disease has levers outside the immune system: sleep, mood and people around you.","tag":"Energy · mood · sleep","u":"https://www.frontiersin.org/journals/medicine/articles/10.3389/fmed.2026.1931467/full"},
+  {"t":"Bezisterim Phase 2 trial in Long COVID fatigue, brain fog and post-exertional malaise","w":"Solve ME/CFS Initiative summary · Nov 9, 2026","n":"About 200 adults; reported fewer fatigue, cognitive and PEM symptoms in people with high symptom levels, with safety similar to placebo.","fit":"Only relevant if your condition is Long COVID or ME/CFS. An early trial and a summary, not yet a peer-reviewed paper: worth asking about, not acting on.","tag":"Energy · Long COVID","u":"https://solvecfs.org/in-biovies-phase-2-trial-bezisterim-is-safe-and-reduces-neurological-symptoms-of-long-covid/"}]}
+</script>
+
+<header class="band"><div class="wrap">
+<span class="tag">DayGuard · personal tracker · not medical advice</span>
+<h1 id="hello">Good morning</h1>
+<p>Morning: tap how you woke up and get a plan for the next few hours, read through last night's log. Night: log what you did, ate and took today. A short brain puzzle each day trains the thinking skills these conditions affect most.</p>
+<blockquote class="qotd" id="qotd"></blockquote>
+<div class="top"><div class="air" id="air"></div><div class="store" id="store"><b>Connecting to your saved history…</b><p>Your entries will load in a moment.</p></div></div>
+</div></header>
+
+<nav class="tabs" aria-label="Sections"><div class="wrap">
+<a href="#am" data-v="am">Morning</a><a href="#puzzle" data-v="puzzle">Today's puzzle</a><a href="#pm" data-v="pm">Night log</a><a href="#history" data-v="history">History &amp; charts</a><a href="#report" data-v="report">Print report</a>
+</div></nav>
+
+<!-- ============ MORNING ============ -->
+<section class="view band" id="v-am"><div class="wrap">
+<div class="modehead"><div><h2>Morning check-in</h2><p>Only what you know right now: how you slept and how you woke up. Food, drinks and activities get logged tonight.</p></div></div>
+<div class="main">
+<form id="f" autocomplete="off" aria-label="Morning check-in">
+<fieldset><legend>Last night</legend>
+<p class="q" id="q-bed">Went to bed around</p><div class="seg" role="radiogroup" aria-labelledby="q-bed" id="bed"></div>
+<p class="q" id="q-wake">Woke up at</p><div class="seg" role="radiogroup" aria-labelledby="q-wake" id="wake"></div>
+<p class="q" id="q-sleep">Hours actually asleep <small style="font-weight:400" id="tib"></small></p><div class="seg" role="radiogroup" aria-labelledby="q-sleep" id="sleep"></div>
+<div class="checks" style="margin-top:10px"><label class="chk"><input type="checkbox" id="unref"> Woke up unrefreshed</label></div>
+</fieldset>
+<fieldset><legend>Right now</legend>
+<p class="q" id="q-energy">Energy (0 = empty, 10 = full)</p><div class="seg nums" role="radiogroup" aria-labelledby="q-energy" id="energy"></div>
+<p class="q" id="q-mood">Mood</p><div class="seg" role="radiogroup" aria-labelledby="q-mood" id="mood"></div>
+<p class="q" id="q-pain">Pain</p><div class="seg" role="radiogroup" aria-labelledby="q-pain" id="pain"></div>
+<p class="q" id="q-speech">Speech</p><div class="seg" role="radiogroup" aria-labelledby="q-speech" id="speech"></div>
+<p class="q" id="q-swallow">Swallowing</p><div class="seg" role="radiogroup" aria-labelledby="q-swallow" id="swallow"></div>
+<p class="q" id="q-mob">Getting around</p><div class="seg" role="radiogroup" aria-labelledby="q-mob" id="mob"></div>
+</fieldset>
+<fieldset><legend>Already on today's calendar</legend>
+<div class="checks" id="coming"></div>
+<p class="q" id="q-hours">Plan for the next</p><div class="seg" role="radiogroup" aria-labelledby="q-hours" id="hours"></div>
+</fieldset>
+<fieldset><legend>Anything new or urgent?</legend>
+<div class="checks"><label class="chk"><input type="checkbox" id="newneuro"> New or worse symptoms for 24+ hours</label><label class="chk"><input type="checkbox" id="fever"> Fever or infection signs</label></div>
+<p class="q">Urgent</p><div class="checks red" id="red"></div>
+</fieldset>
+<details id="aboutme"><summary>About me (set once)</summary>
+<div class="checks" style="margin-top:10px"><label class="chk"><input type="checkbox" id="pem"> I crash 12–72 hours after doing too much</label><label class="chk"><input type="checkbox" id="heat"> Heat makes my symptoms worse</label></div>
+<p class="hint" style="margin-top:8px">Crashing (post-exertional malaise) changes the plan: it keeps a 30% energy reserve and never pushes exercise.</p>
+<p class="q">Supplements I take regularly</p><p class="hint">Tap once here. Each night is then a single tap: all, some or none. Doses aren't needed.</p>
+<div class="checks" id="supps"></div>
+<p class="hint" style="margin-top:8px">Show this list to your doctor or pharmacist. Some supplements interact with medicines, and some cause harm at high doses; long-term high-dose vitamin B6, for example, can itself damage nerves.</p>
+</details>
+<p style="margin-top:16px"><button class="btn" type="button" id="save">Save morning check-in</button><span class="saved" id="savedmsg" role="status"></span></p>
+<p class="jump"><a href="#plan" id="jump" class="btn ghost" style="display:inline-flex;align-items:center;text-decoration:none">See my morning ↓</a></p>
+<p class="hint">The plan updates as you tap. Saving adds this check-in to your history. Feeling different later? Check in again for a fresh plan.</p>
+</form>
+<section id="plan" aria-live="polite"></section>
+</div></div></section>
+
+<!-- ============ PUZZLE ============ -->
+<section class="view band" id="v-puzzle" hidden><div class="wrap pzwrap">
+<div class="stage" id="stage" aria-live="polite"></div>
+<aside>
+<div class="ch science"><h3>Why a daily puzzle?</h3>
+<p>Thinking problems such as slower processing, attention lapses and memory slips affect roughly 40–70% of people with MS, and they are common in other neurological and autoimmune conditions too.</p>
+<p>A 2019 meta-analysis of 20 randomized trials in MS (Lampit et al., <i>Neurorehabilitation and Neural Repair</i>) found that computerized cognitive training improved overall thinking performance by a modest, real amount (effect size 0.30). Gains showed up in attention and processing speed, executive function, and verbal and visual memory.</p>
+<ul><li>Each weekday rotates through those trained skills, and every puzzle is newly generated from the date.</li><li>Difficulty adapts to your last score on that puzzle type.</li><li>Gains faded when training stopped, so a little every day beats a lot once.</li><li>It trains thinking skills; it does not repair nerves. Evidence on fatigue and daily function was inconclusive, and studies outside MS are fewer.</li></ul>
+<p class="hint">Having formal memory or speed testing (such as the SDMT)? Tell the examiner you do daily brain training.</p></div>
+<div class="ch" style="margin-top:14px"><h3>Your recent puzzles</h3><div id="pzhist"></div></div>
+</aside>
+</div></section>
+
+<!-- ============ NIGHT ============ -->
+<section class="view band" id="v-pm" hidden><div class="wrap">
+<div class="modehead"><div><h2>Night log</h2><p>What happened, what you ate and drank, and what you took today. Everything saves as you tap, and tomorrow morning reads it back to you.</p></div>
+<div class="range" style="margin:0"><div class="fld"><label for="ndate">Logging for</label><input type="date" id="ndate"></div><button class="btn ghost" type="button" id="ntoday">Today</button><button class="btn ghost" type="button" id="nyday">Yesterday</button></div></div>
+<div class="main">
+<form id="nf" autocomplete="off" aria-label="Night log">
+<fieldset><legend>How the day felt overall</legend>
+<p class="q" id="nq-energy">Energy this evening</p><div class="seg nums" role="radiogroup" aria-labelledby="nq-energy" id="n-energy"></div>
+<p class="q" id="nq-mood">Mood today</p><div class="seg" role="radiogroup" aria-labelledby="nq-mood" id="n-mood"></div>
+<p class="q" id="nq-pain">Pain today</p><div class="seg" role="radiogroup" aria-labelledby="nq-pain" id="n-pain"></div>
+<p class="q" id="nq-speech">Speech today (at its worst)</p><div class="seg" role="radiogroup" aria-labelledby="nq-speech" id="n-speech"></div>
+<p class="q" id="nq-swallow">Swallowing today (at its worst)</p><div class="seg" role="radiogroup" aria-labelledby="nq-swallow" id="n-swallow"></div>
+</fieldset>
+<fieldset><legend>Daylight</legend><p class="q" id="nq-light">First daylight today came</p><div class="seg" role="radiogroup" aria-labelledby="nq-light" id="n-light"></div><p class="hint" style="margin-top:8px">Outdoors or at a bright window. Daylight soon after waking is the strongest signal your body clock gets.</p></fieldset>
+<fieldset><legend>What you did</legend><div class="checks" id="nacts"></div></fieldset>
+<fieldset><legend>Food, drinks and supplements</legend><div id="fuel-pm" data-fuel="pm"></div></fieldset>
+<fieldset><legend>Notes <small style="font-weight:400">(optional)</small></legend><textarea id="nnote" placeholder="Anything else worth remembering about today"></textarea></fieldset>
+<fieldset><legend>Anything urgent?</legend><div class="checks red" id="n-red"></div></fieldset>
+<p><span class="saved" id="nsaved" role="status"></span></p>
+</form>
+<section id="review" aria-live="polite"></section>
+</div></div></section>
+
+<!-- ============ HISTORY ============ -->
+<section class="view band" id="v-history" hidden><div class="wrap">
+<h2>Your history</h2>
+<div id="hsample"></div>
+<div class="range" id="range1"></div>
+<div id="hbody"></div>
+</div></section>
+
+<!-- ============ REPORT ============ -->
+<section class="view band" id="v-report" hidden><div class="wrap">
+<h2>Print a report for your doctor</h2>
+<p class="hint" style="margin-top:6px">Choose the dates. With no questions ticked you get a printable report that opens your print window on its own. Tick one or more questions instead to get an AI-ready prompt with your history attached.</p>
+<div class="range" id="range2"></div>
+<p id="rsum" class="mute"></p>
+<details class="fuelbox" id="aibox"><summary>Optional: have an AI review my history <small>· pick what you want to know</small></summary>
+<div class="aiq" id="aiq"></div>
+<p class="hint">Paste the result into the AI assistant you use (Claude or another). It contains your health history, so share it only with a service you trust, and remove anything you'd rather keep private.</p>
+</details>
+<p><button class="btn" type="button" id="gen">Generate printable report</button> <button class="btn ghost" type="button" id="aicopy" hidden>Copy prompt</button> <button class="btn ghost" type="button" id="csv">Download data (CSV)</button><span class="saved" id="genmsg" role="status"></span></p>
+<div id="rprev"></div><div id="aiout" class="aiout"></div>
+<div class="ch" style="margin-top:22px"><h3>Back up and restore</h3><p class="sum">A backup is one small file holding every entry and your settings. Keep it somewhere safe; it can restore your history on any device or browser. Restoring merges: nothing already here is lost.</p>
+<p style="display:flex;flex-wrap:wrap;gap:10px;align-items:center"><button class="btn ghost" type="button" id="bak">Back up my history</button><label class="btn ghost" style="display:inline-flex;align-items:center;cursor:pointer">Restore from a backup<input type="file" id="restore" accept=".json,application/json" style="position:absolute;opacity:0;width:1px;height:1px"></label><span class="saved" id="bakmsg" role="status"></span></p></div>
+</div></section>
+
+<section class="band" style="padding-top:0"><div class="wrap">
+<details><summary>Research that could help (refreshed separately)</summary>
+<p class="hint" id="rwin" style="margin-top:8px"></p>
+<div class="papers" id="papers"></div>
+</details>
+<details><summary>How it works, privacy, and tests</summary>
+<p>The plan comes from fixed rules, not an AI: battery math (rest adds charge, activity spends it), safe-swallowing and speech-practice basics from speech-language therapy, and pacing guidance for people who crash after exertion. Morning links come from your own history: once about 10 nights are logged, the page compares what you did the evening before with how you woke up. Support scores follow the Neuro-Centric Dashboard: each part is capped, and sleep scales the result. History is saved privately to the signed-in person's own space; not even the page's owner can read it.</p>
+<p id="score" style="font-weight:800"></p><div class="scroll"><table class="stack"><thead><tr><th>Test</th><th>Result</th></tr></thead><tbody id="tbody"></tbody></table></div>
+</details>
+<footer><b>DayGuard <span id="appVer">1.0</span></b> · updated <span id="appBuilt">November 24, 2026</span> · one self-contained page. DayGuard is a design demo, not a medical device and not medical advice. Share the report with the care team; never stop or change a prescribed medicine without talking to your doctor.</footer>
+</div></section>
+<div class="tip" id="tip" role="tooltip"></div>
+
+<script>
+{
+/*ENGINE START*/
+const pad=n=>String(n).padStart(2,'0');
+const keyOf=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const parseKey=k=>{const [y,m,d]=k.split('-').map(Number);return new Date(y,m-1,d)};
+const addDays=(k,n)=>{const d=parseKey(k);d.setDate(d.getDate()+n);return keyOf(d)};
+const fmtDate=k=>parseKey(k).toLocaleDateString('en-US',{month:'short',day:'numeric'});
+const fmtDateY=k=>parseKey(k).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
+const fmtTime=d=>d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+const avg=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:null;
+const pct=v=>v==null?'–':Math.round(v*100)+'%';
+const MOOD=['Very low','Low','OK','Good','Very good'];
+const PAIN=['None','Mild','Moderate','Bad','Severe'];
+const SPEECH=['Clear','A bit slurred','Hard to understand'];
+const SWALLOW=['Fine','Need to be careful','Coughing or choking'];
+const MOB=[['steady','Steady'],['unsteady','Unsteady'],['walker','Cane or walker'],['chair','Wheelchair']];
+const ACTS=[['outing','Went out (store, church, errands)'],['appt','Medical appointment'],['therapy','Therapy or exercise session'],['walk','Long walk'],['chores','Chores or yard work'],['visitors','Visitors or long conversations'],['travel','Long car ride'],['nap','Nap over an hour'],['screens','Screens late at night'],['caffeine','Caffeine after noon'],['alcohol','Alcohol'],['lateMeal','Big or late meal'],['stress','Stress or upsetting news'],['heat','Hot room, sun or hot shower'],['missedMeds','Missed or late medicine'],['fall','Fall or near-fall'],['pain','Pain flare'],['restful','Mostly restful day']];
+const FUEL=[
+ {k:'protein',q:'Protein (meat, fish, eggs, beans, dairy)',o:['None','At 1 meal','At 2+ meals']},
+ {k:'water',q:'Water and other fluids',o:['Under 4 cups','4–7 cups','8+ cups']},
+ {k:'sugar',q:'Sweets or sugary drinks',o:['None','Some','A lot']},
+ {k:'omega3',q:'Fish, walnuts, flax or an omega-3 supplement',o:['No','Yes']},
+ {k:'greens',q:'Leafy greens, beans or nuts',o:['No','Yes']},
+ {k:'supps',q:'My usual supplements',o:['None','Some','All']}];
+const SUPPS=[['coq10','CoQ10','mito'],['alcar','Acetyl-L-carnitine (ALCAR)','mito'],['ala','Alpha-lipoic acid (ALA)','mito'],['pqq','PQQ','mito'],['mg','Magnesium','mito'],['bcomplex','B-complex','both'],['b6','Vitamin B6','myelin'],['b12','Vitamin B12','myelin'],['folate','Folate (B9)','myelin'],['d','Vitamin D','myelin'],['fishoil','Omega-3 / fish oil','both'],['citicoline','Citicoline','myelin'],['theanine','L-theanine','mood'],['c','Vitamin C','both'],['e','Vitamin E','both']];
+const FUELTAGS=[['f_lowWater','Under 4 cups of fluid'],['f_sugar','A lot of sweets or sugary drinks'],['f_noProtein','No protein'],['f_skipSupps','Skipped usual supplements'],['f_water8','8+ cups of fluid'],['f_omega3','Fish or omega-3']];
+const ACTNAME=Object.fromEntries(ACTS.concat(FUELTAGS,[['c_lightEarly','Daylight within 30 min of waking'],['c_lightLate','Late or no daylight'],['c_bedLate','Bed after midnight']]));
+const circTags=(d,next)=>{const t=[];if(d&&d.light===0)t.push('c_lightEarly');if(d&&d.light>=3)t.push('c_lightLate');if(next&&next.sleep&&next.sleep.bed>=1440)t.push('c_bedLate');return t};
+const COMING=[['appt','Appointment or outing'],['talk','Visitors or phone call'],['shower','Shower'],['chores','Chores'],['mealprep','Making a meal'],['none','Nothing planned']];
+const RED=[{id:'stroke',name:'Speech suddenly much worse, face droop or one-sided weakness',a:'911'},{id:'choke',name:'Choking that does not clear, or cannot swallow',a:'911'},{id:'chest',name:'Chest pain or severe trouble breathing',a:'911'},{id:'selfharm',name:'Thoughts of harming myself',a:'988'}];
+
+// ---- fuel and scores (from the Neuro-Centric Dashboard: capped parts, sleep as a multiplier) ----
+const fuelTags=f=>{if(!f)return[];const t=[];if(f.water===0)t.push('f_lowWater');if(f.water===2)t.push('f_water8');if(f.sugar===2)t.push('f_sugar');if(f.protein===0)t.push('f_noProtein');if(f.supps===0)t.push('f_skipSupps');if(f.omega3===1)t.push('f_omega3');return t};
+function fuelParts(f,p){if(!f)return null;const v={};if(f.protein!=null)v.protein=f.protein/2;if(f.water!=null)v.water=f.water/2;if(f.sugar!=null)v.sugar=[1,.6,.2][f.sugar];if(f.omega3!=null)v.omega3=f.omega3;if(f.greens!=null)v.greens=f.greens;if(f.supps!=null&&((p&&p.supps)||[]).length)v.supps=f.supps/2;return v}
+function fuelScore(f,p){const v=fuelParts(f,p);if(!v)return null;const x=Object.values(v);return x.length>=3?avg(x):null}
+const sleepMult=h=>h==null?1:0.6+0.4*Math.min(1,h/7.5);
+function supportScores(f,p,h){const v=fuelParts(f,p);if(!v||Object.keys(v).length<3)return{mito:null,myelin:null};
+ const sel=(p&&p.supps)||[],feeds=t=>sel.some(k=>{const s=SUPPS.find(x=>x[0]===k);return s&&(s[2]===t||s[2]==='both')});
+ const pick=ks=>avg(ks.filter(k=>v[k]!=null).map(k=>v[k]));
+ const m=pick(['protein','sugar','water','greens','omega3'].concat(feeds('mito')?['supps']:[])),y=pick(['omega3','greens','protein'].concat(feeds('myelin')?['supps']:[]));
+ return{mito:m==null?null:m*sleepMult(h),myelin:y==null?null:y*sleepMult(h)}}
+const sleepScore=a=>a.sleep==null?null:(Math.min(1,a.sleep/8)+(a.unref?0.4:1))/2;
+function dayScore(a,f,p){const fp=[a.energy!=null&&a.energy/10,a.mood!=null&&a.mood/4,a.pain!=null&&1-a.pain/4].filter(v=>v!==false),feel=a.energy==null?null:avg(fp);let w=0,t=0;[[feel,.5],[sleepScore(a),.25],[fuelScore(f,p),.25]].forEach(([v,wt])=>{if(v!=null){t+=v*wt;w+=wt}});return w>=.5?t/w:null}
+
+// ---- one day's summary ----
+function agg(day,p){
+ const c=day.checkins||[],n=day.night,all=c.concat(n&&n.energy!=null?[n]:[]);
+ const nums=(a,f)=>a.map(x=>x[f]).filter(v=>typeof v==='number'),mx=a=>a.length?Math.max(...a):null;
+ const o={date:day.date,n:c.length,hasNight:!!(n&&n.energy!=null),amEnergy:avg(nums(c,'energy')),energy:avg(nums(all,'energy')),emin:mx(nums(all,'energy').map(v=>-v))==null?null:-mx(nums(all,'energy').map(v=>-v)),mood:avg(nums(all,'mood')),pain:avg(nums(all,'pain')),speech:mx(nums(all,'speech')),swallow:mx(nums(all,'swallow')),sleep:day.sleep?day.sleep.h:null,unref:day.sleep?!!day.sleep.unref:null,did:day.did||[],notes:day.notes||'',fuel:day.fuel||null,puzzle:day.puzzle||null};
+ o.wakeM=day.sleep&&day.sleep.wake!=null?day.sleep.wake:null;o.bedM=day.sleep&&day.sleep.bed!=null?day.sleep.bed:null;o.light=day.light!=null?day.light:null;
+ o.fuelScore=fuelScore(o.fuel,p);o.dayScore=dayScore(o,o.fuel,p);const sp=supportScores(o.fuel,p,o.sleep);o.mito=sp.mito;o.myelin=sp.myelin;
+ return o;
+}
+// a hard MORNING: low energy on waking, short sleep, or unrefreshed
+const isHard=a=>{const e=a.amEnergy!=null?a.amEnergy:a.energy;return (e!=null&&e<=3)||(a.sleep!=null&&a.sleep<6)||a.unref===true};
+const logged=d=>!!d&&((d.checkins||[]).length||d.sleep||(d.did||[]).length||d.fuel||d.night||d.puzzle);
+function patterns(days){
+ const by=Object.fromEntries(days.map(d=>[d.date,agg(d)])),raw=Object.fromEntries(days.map(d=>[d.date,d]));const pairs=[];
+ for(const d of days){const nx=by[addDays(d.date,1)],rn=raw[addDays(d.date,1)];const tags=(d.did||[]).concat(fuelTags(d.fuel),circTags(d,rn));if(nx&&(nx.n||nx.sleep!=null))pairs.push({did:tags,hard:isHard(nx)})}
+ if(pairs.length<10)return{ok:false,n:pairs.length,rows:[]};
+ const base=pairs.filter(x=>x.hard).length/pairs.length;
+ const rows=ACTS.concat(FUELTAGS,CIRCTAGS).map(([k,name])=>{const w=pairs.filter(x=>x.did.includes(k));return{k,name,n:w.length,rate:w.length?w.filter(x=>x.hard).length/w.length:0}}).filter(r=>r.n>=3).sort((a,b)=>b.rate-a.rate);
+ return{ok:true,n:pairs.length,base,rows};
+}
+// ---- morning: what last night's log means for this morning ----
+function morningLinks(D,k,now,p){
+ const yk=addDays(k,-1),y=D[yk],out={yk,logged:!!(y&&((y.did||[]).length||y.fuel||y.night)),links:[],head:[],verdict:''};
+ if(!out.logged)return out;
+ out.y=agg(y,p);
+ const tags=(y.did||[]).concat(fuelTags(y.fuel),circTags(y,D[k]));
+ const pt=patterns(Object.values(D).filter(d=>d.date<k));out.ptOk=pt.ok;out.ptN=pt.n;
+ if(pt.ok){
+  pt.rows.filter(r=>tags.includes(r.k)&&r.rate>=pt.base+0.15).slice(0,2).forEach(r=>out.links.push({kind:'risk',text:`After "${r.name.toLowerCase()}", your next morning was hard ${pct(r.rate)} of the time (your usual: ${pct(pt.base)}).`}));
+  pt.rows.filter(r=>tags.includes(r.k)&&r.rate<=pt.base-0.15).slice(0,1).forEach(r=>out.links.push({kind:'good',text:`"${r.name}" usually comes before your better mornings (hard only ${pct(r.rate)} of the time).`}));
+ }
+ const hard=isHard({amEnergy:now.energy,sleep:now.sleep,unref:now.unref});
+ if(out.links.some(l=>l.kind==='risk'))out.verdict=hard?'This morning fits that pattern, so the plan below leans on rest.':'This morning is going better than that pattern predicted.';
+ else if(out.links.length)out.verdict=hard?'A rough start anyway. Some mornings just are; the plan leans on rest.':'This morning fits your usual pattern after a day like that.';
+ const f=y.fuel||{};
+ if(f.water===0)out.head.push('Fluids were low yesterday: start with a full glass of water now, sitting upright, small sips.');
+ if(f.protein===0)out.head.push('Little protein yesterday: make breakfast protein-first (eggs, yogurt, beans, cottage cheese).');
+ if(f.sugar===2)out.head.push('Yesterday was heavy on sugar: a protein breakfast helps avoid a mid-morning dip.');
+ if(f.supps===0&&((p&&p.supps)||[]).length)out.head.push("Supplements were missed yesterday: take today's as your doctor directed; don't double up.");
+ if((y.did||[]).includes('missedMeds'))out.head.push('A medicine was missed or late yesterday: check today\'s doses with your pill organizer or pharmacist.');
+ return out;
+}
+// ---- night: what today means for tomorrow ----
+function tomorrowTips(D,k,p){
+ const d=D[k];if(!d)return[];const tags=(d.did||[]).concat(fuelTags(d.fuel),circTags(d,null)),t=[];
+ const pt=patterns(Object.values(D).filter(x=>x.date<=k));
+ if(pt.ok)pt.rows.filter(r=>tags.includes(r.k)&&r.rate>=pt.base+0.15).slice(0,2).forEach(r=>t.push(`Today included "${r.name.toLowerCase()}", which comes before ${pct(r.rate)} of your hard mornings. Plan an easy start tomorrow and keep bedtime on time.`));
+ const f=d.fuel||{};
+ if(f.water===0)t.push('Fluids were low: put a full cup of water by the bed for the morning.');
+ if(f.protein===0)t.push('No protein today: set out a protein breakfast now so it is easy tomorrow.');
+ if(d.light>=3)t.push('Daylight came late today: tomorrow, get outside or to a bright window within an hour of waking.');
+ if((d.did||[]).includes('fall'))t.push('You logged a fall or near-fall: tell your doctor or physical therapist this week, even if you feel fine.');
+ if(d.night&&d.night.swallow===2)t.push('You logged coughing or choking: ask for a swallowing evaluation with a speech-language pathologist soon.');
+ return t.slice(0,4);
+}
+
+// ---- 4–6 hour plan ----
+function movement(s,p,air,cost){
+ if(p.pem||cost<=1)return{t:'Gentle range of motion',d:'5 minutes lying or seated: slow ankle circles, knee bends, shoulder rolls. Stop well before you feel tired.',c:1};
+ if(s.mob==='chair')return{t:'Seated exercise, 10–15 minutes',d:'Arm raises, marching in place, ankle pumps and trunk turns. Finish with a pressure-relief shift.',c:2};
+ if(s.mob==='walker'||s.mob==='unsteady')return{t:'Supported exercise, 10 minutes',d:'Standing at a counter or with your walker: sit-to-stands, heel raises, side steps. Someone nearby if possible.',c:2};
+ const outside=air.aqi<=100&&air.tempF>=45&&air.tempF<=85&&!(p.heat&&air.tempF>=80);
+ return{t:outside?'Short walk outside, 10–15 minutes':'Short walk indoors, 10–15 minutes',d:outside?`Air is ${String(air.category).toLowerCase()} (AQI ${air.aqi}). An easy pace where you can still breathe comfortably; bring your phone.`:'Hallway or room laps at an easy pace, or a stationary bike.',c:2};
+}
+function buildPlan(s,p,air,now,hrs){
+ const res={blocks:[],notes:[],start:null,proj:[]};
+ const st=new Date(now);st.setSeconds(0,0);st.setMinutes(Math.ceil(st.getMinutes()/15)*15);res.start=st;
+ const recovery=s.recovery,floor=p.pem?3:2;let bat=s.energy;const cap=Math.min(10,s.energy+2);
+ const q=[],want=s.coming||[];
+ if(want.includes('appt'))q.push({k:'appt',t:'Appointment or outing',d:'Rest before you go. Bring water, your medicine list and a card that says "My condition affects my speech. Please give me time to answer." Plan a rest when you get back.',c:3,n:2,must:1});
+ if(want.includes('talk'))q.push({k:'talk',t:'Visitors or call',d:'Speech is clearest when you are rested, so do it now. Face the person, use short sentences and pause between them. Keep a text-to-speech app or letter board handy; switching to texting is fine.',c:2,must:1});
+ if(want.includes('shower'))q.push(bat>=4&&!recovery?{k:'shower',t:'Seated shower',d:`Use a shower chair, ${p.heat?'lukewarm (heat can worsen your symptoms)':'warm, not hot'}. Sit to dry and dress. Have someone in the house if you are unsteady.`,c:3,must:1}:{k:'shower',t:'Quick wash instead of a shower',d:'Energy is low: a sit-down sponge wash costs far less. Save the shower for a better hour.',c:1,must:1});
+ if(want.includes('mealprep'))q.push({k:'mealprep',t:'Make a meal, seated',d:'Gather everything first, sit to chop and stir, choose soft moist foods. Make extra to freeze for a low day.',c:2,must:1});
+ if(want.includes('chores'))q.push({k:'chores',t:'One chore, 15 minutes',d:'Set a timer and stop when it rings, even mid-task. Sit wherever you can.',c:2,must:1});
+ if(!recovery&&s.energy>=3&&!s.puzzleDone)q.push({k:'puzzle',t:"Today's brain puzzle, about 5 minutes",d:'Thinking is sharpest when you are rested, so do it early. Open the "Today\'s puzzle" tab; everything is tap-only.',c:1});
+ if(!recovery){
+  if(s.speech>=1&&s.energy>=3)q.push({k:'speech',t:'Speech practice, 10 minutes',d:'Sit tall, take a full breath, then speak slowly and loudly, stretching each sound. Read a short passage aloud. Stop when your voice tires; fatigue makes speech worse, so practise early.',c:1});
+  if(s.energy>=3)q.push(Object.assign({k:'move'},movement(s,p,air,s.energy>=5?2:1)));
+  q.push({k:'stretch',t:'Stretch, 10 minutes',d:'Calves, hamstrings and hips, holding each about 30 seconds. Stretching helps with stiffness and spasticity.',c:1});
+ }
+ const C=s.circ,nowM=st.getHours()*60+st.getMinutes();
+ if(st.getHours()<12)q.push(C&&nowM<C.rise?{k:'light',t:'Bright light now, daylight at sunrise',d:`The sun is up at ${fmtMin(C.rise)}. Until then, turn on bright lights; after it rises, sit outside or at a bright window for 15 to 20 minutes.`,c:0}:{k:'light',t:'Daylight, 15–20 minutes',d:'Sit outside or at a bright window. Morning daylight is the strongest signal your body clock gets; it sets tonight\'s sleepiness and steadies energy.',c:0});
+ q.push({k:'joy',t:s.mood<=1?'Reach out to someone':'Something you enjoy',d:s.mood<=1?'Text or message someone you trust, or have them come sit with you. You do not have to talk much.':'Music, a show, time outside, a hobby: 15 to 20 minutes just for you.',c:0});
+ const slots=hrs*2;let last=null;const meals=new Set();
+ for(let i=0;i<slots;i++){
+  const t=new Date(st.getTime()+i*30*60000),h=t.getHours()+t.getMinutes()/60;let b;
+  if(h>=22||h<5){b={k:'bed',t:'Bed',d:'Lights out at your usual time. If you are awake after 20 minutes, get up and do something quiet in dim light.',c:0,rest:true}}
+  else if(h>=20.5&&!meals.has('wind')){meals.add('wind');b={k:'wind',t:'Wind down and log your night',d:'Dim lights, screens away. Fill in the Night log (two minutes of tapping), take evening medicines as prescribed.'+(s.circ?` Lights out by ${fmtMin(s.circ.lightsOut)}.`:''),c:0,rest:true}}
+  else if(meals.has('wind')){b=last&&last.k==='rest'?{k:'quiet',t:'Quiet time',d:'Low light and low effort: music, an audiobook, a calm show. Shift position now and then.',c:-0.5,rest:true}:{k:'rest',t:'Rest in a comfortable position',d:'Low light, no screens close to your face. Let the day settle.',c:-1,rest:true}}
+  else if(((h>=7&&h<9.5&&!meals.has('b'))||(h>=11.5&&h<13.5&&!meals.has('l'))||(h>=17.5&&h<19.5&&!meals.has('d')))&&(!last||last.k!=='meal')){
+   meals.add(h<10?'b':h<14?'l':'d');
+   b={k:'meal',t:h<10?'Breakfast, sitting fully upright':'Meal, sitting fully upright',d:(h<10&&s.headProtein?'Make it protein-first today. ':'')+'Small bites and sips, one at a time. Finish swallowing before you talk. Stay upright for 30 minutes after.'+(s.swallow>=1?' Use the swallowing strategies your speech therapist gave you, and stop if you cough.':'')+' Rest your voice while you eat.',c:1};
+  }else{
+   const nxt=q[0];
+   const needRest=!nxt||bat-(nxt.c||0)<floor||(last&&last.c>=2&&(p.pem||bat<=5))||(recovery&&!(nxt&&nxt.must));
+   if(nxt&&nxt.c===0&&!(last&&last.c>=2&&p.pem))b=q.shift();
+   else if(needRest&&!(nxt&&nxt.must&&bat-nxt.c>=1&&!(last&&last.c>=2)))b=last&&last.k==='rest'&&bat>=cap-0.5?{k:'quiet',t:'Quiet time',d:'Sit back, low effort: listen to something, look outside. Shift position.',c:-0.5,rest:true}:{k:'rest',t:'Lie down and rest, 20–30 minutes',d:s.mob==='chair'?'Transfer to bed or recline fully. Low light, eyes closed, no scrolling. Change position.':'Low light, eyes closed, no scrolling. This refills the battery; do it before you are drained.',c:-1,rest:true};
+   else b=q.shift();
+  }
+  if(b.n===2&&i+1<slots){bat=Math.max(0,bat-b.c);res.blocks.push(Object.assign({at:t,span:2,bat},b));i++;last=b;res.proj.push(bat,bat);continue}
+  bat=Math.max(0,Math.min(cap,bat-(b.c||0)));res.blocks.push(Object.assign({at:t,span:1,bat},b));res.proj.push(bat);last=b;
+  if(b.k==='bed')break;
+ }
+ if(q.some(x=>x.must))res.notes.push('Not enough charge for: '+q.filter(x=>x.must).map(x=>x.t.toLowerCase()).join(', ')+'. Move it to another day or ask for help with it.');
+ if(s.circ){const C=s.circ;res.notes.unshift(`Peak focus window ${fmtMin(C.focus[0])}–${fmtMin(C.focus[1])}: the puzzle, calls and anything that needs clear speech go best then.`);res.notes.push(`Expect an afternoon dip around ${fmtMin(C.dip[0])}–${fmtMin(C.dip[1])}; a planned rest fits there. Last caffeine by ${fmtMin(C.caffeine)}.`)}
+ if(s.mob==='chair')res.notes.push('Shift your weight or do a pressure lift every 30 minutes you are sitting.');
+ res.notes.push('Sip water with every block'+(s.swallow>=1?', sitting upright, small sips':'')+'. Take medicines as prescribed.');
+ if(p.heat&&air.tempF>=80)res.notes.push(`It is about ${air.tempF}°F: stay cool. A fan, cold drinks and a cool cloth help heat-related symptoms settle.`);
+ if(air.aqi>100)res.notes.push(`Air is poor (AQI ${air.aqi}): keep activity indoors with windows closed.`);
+ res.end=bat;return res;
+}
+function insights(days,todayKey){
+ const out=[],A=days.map(d=>agg(d)),recent=A.filter(a=>a.date>addDays(todayKey,-7)&&a.date<=todayKey),prior=A.filter(a=>a.date>addDays(todayKey,-21)&&a.date<=addDays(todayKey,-7));
+ if(recent.filter(a=>a.mood!=null&&a.mood<=1).length>=4)out.push({warn:1,t:'Your mood has been low most days this week',d:"That's worth telling your doctor. Depression is common with this kind of illness, it's treatable, and treating it often helps energy too. If you have thoughts of harming yourself, call or text 988."});
+ if(recent.some(a=>a.swallow===2))out.push({warn:1,t:'You logged coughing or choking this week',d:'Ask your doctor for a swallowing evaluation with a speech-language pathologist soon. Until then: sit upright, small bites and sips, no talking while chewing.'});
+ const rs=avg(recent.filter(a=>a.speech!=null).map(a=>a.speech)),ps=avg(prior.filter(a=>a.speech!=null).map(a=>a.speech));
+ if(rs!=null&&ps!=null&&rs-ps>=0.5)out.push({warn:1,t:'Speech has been worse this week than the two weeks before',d:'A gradual change is worth reporting to your neurologist and speech therapist. A sudden change is an emergency: call 911.'});
+ const hard=recent.filter(isHard).length;if(hard>=3)out.push({t:`${hard} hard mornings in the last week`,d:'Bring a printed report from the Report tab to your next appointment so your care team can see the pattern.'});
+ return out;
+}
+
+// ---- daily puzzle: generated from the date, adapts to your last score of that type ----
+function rngFor(str){let h=1779033703^str.length;for(let i=0;i<str.length;i++){h=Math.imul(h^str.charCodeAt(i),3432918353);h=h<<13|h>>>19}let a=h>>>0;return()=>{a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const PZ=[
+ {k:'compare',name:'Same or different?',skill:'Processing speed',mins:3,how:'Two small patterns appear. Tap Same if they match, Different if one square differs. Accuracy first; speed comes with practice.'},
+ {k:'search',name:'Find the arrows',skill:'Attention',mins:4,how:'Tap every solid arrow pointing up (▲) in the grid, then tap Done. Hollow ones (△) don\'t count. Take your time.'},
+ {k:'switch',name:'Shape or color?',skill:'Executive function',mins:3,how:'The word on top tells you the rule. If it says SHAPE, answer the shape; if it says COLOR, answer the color. The rule changes now and then.'},
+ {k:'pattern',name:'Remember the squares',skill:'Visual memory',mins:4,how:'Some squares light up for a few seconds. When they go dark, tap the ones that were lit, then tap Check.'},
+ {k:'words',name:'Word recall',skill:'Verbal memory',mins:4,how:'Read the words, quick number round, then pick out the words you saw. No speaking needed.'}];
+const dayIndex=k=>Math.round(parseKey(k).getTime()/864e5);
+const puzzleType=k=>PZ[((dayIndex(k)%5)+5)%5];
+function levelFor(type,D,k){const prev=Object.values(D).filter(d=>d.date<k&&d.puzzle&&d.puzzle.type===type&&!d.puzzle.short).sort((a,b)=>a.date<b.date?1:-1)[0];if(!prev)return 1;const L=prev.puzzle.level||1,s=prev.puzzle.score;return Math.max(1,Math.min(5,s>=0.85?L+1:s<0.6?L-1:L))}
+const WORDS='apple river candle garden pencil window blanket ladder button forest mirror basket lemon carpet bridge pillow orange hammer castle rocket violin turtle helmet jacket kettle anchor feather bottle wallet puzzle compass lantern ribbon saddle tomato marble shovel teapot camera tunnel island harbor cookie diamond engine falcon guitar meadow napkin oyster parrot quilt rabbit spider tiger umbrella velvet walnut zipper acorn bucket cactus dolphin eagle flute goblet honey igloo jungle koala lobster magnet nickel olive peanut quarry raisin sailor timber unicorn vase wagon yogurt bamboo canyon donkey eraser fossil glacier hammock iron jigsaw kitten lettuce muffin needle orchard pebble rooster sparrow thimble trumpet canoe biscuit cherry crayon'.split(' ');
+function genPuzzle(type,k,level,short){
+ const r=rngFor(k+':'+type),pick=a=>a[Math.floor(r()*a.length)],L=level;
+ const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+ const cut=n=>short?Math.max(2,Math.ceil(n/2)):n;
+ if(type==='compare'){const sz=L<=2?3:4,N=cut(12+2*L),items=[];for(let i=0;i<N;i++){const A=Array.from({length:sz*sz},()=>r()<0.45?1:0),same=r()<0.5,B=A.slice();if(!same){const j=Math.floor(r()*B.length);B[j]=1-B[j]}items.push({sz,A,B,same})}return{type,level:L,items}}
+ if(type==='search'){const n=Math.min(7,4+Math.ceil(L/2)),rounds=cut(3),ds=L>=3?['▼','◀','▶','△']:['▼','◀','▶'],R=[];for(let i=0;i<rounds;i++){const cells=Array.from({length:n*n},()=>pick(ds)),tc=3+Math.floor(r()*3)+Math.floor(L/2),idx=shuffle([...Array(n*n).keys()]).slice(0,tc);idx.forEach(j=>cells[j]='▲');R.push({n,cells,targets:idx.length})}return{type,level:L,rounds:R}}
+ if(type==='switch'){const N=cut(16+2*L),ps=0.25+0.08*L,items=[];let rule=r()<0.5?'shape':'color';for(let i=0;i<N;i++){if(i>0&&r()<ps)rule=rule==='shape'?'color':'shape';items.push({rule,shape:r()<0.5?'circle':'square',color:r()<0.5?'blue':'orange'})}return{type,level:L,items}}
+ if(type==='pattern'){const n=L>=4?5:4,k2=2+L,rounds=cut(4),R=[];for(let i=0;i<rounds;i++)R.push({n,lit:shuffle([...Array(n*n).keys()]).slice(0,Math.min(k2,n*n-2))});return{type,level:L,rounds:R,showMs:2500+350*k2}}
+ if(type==='words'){const n=short?4:5+L,all=shuffle(WORDS),study=all.slice(0,n),foils=all.slice(n,2*n),nums=Array.from({length:5},()=>[1+Math.floor(r()*98),1+Math.floor(r()*98)]).map(([a,b])=>a===b?[a,b+1]:[a,b]);return{type,level:L,study,choices:shuffle(study.concat(foils)),nums}}
+}
+// ---- body clock: sunrise for Colbert, OK, focus window, bedtime ----
+const LAT=33.853,LON=-96.502,TZ='America/Chicago';
+const LIGHT=['Within 30 min of waking','30–60 min after','1–2 hours after','2+ hours after','No daylight today'];
+const CIRCTAGS=[['c_lightEarly','Daylight within 30 min of waking'],['c_lightLate','Late or no daylight'],['c_bedLate','Bed after midnight']];
+function sunTimes(k,lat=LAT,lon=LON){const [y,m,d]=k.split('-').map(Number),JD=Date.UTC(y,m-1,d)/864e5+2440587.5,n=Math.ceil(JD-2451545+0.0008),r=Math.PI/180;
+ const Js=n-lon/360,M=((357.5291+0.98560028*Js)%360+360)%360,C=1.9148*Math.sin(M*r)+0.02*Math.sin(2*M*r)+0.0003*Math.sin(3*M*r),L=(M+C+180+102.9372)%360,Jt=2451545+Js+0.0053*Math.sin(M*r)-0.0069*Math.sin(2*L*r),sd=Math.sin(L*r)*Math.sin(23.4397*r),cd=Math.cos(Math.asin(sd)),cw=(Math.sin(-0.833*r)-Math.sin(lat*r)*sd)/(Math.cos(lat*r)*cd),w=Math.acos(Math.max(-1,Math.min(1,cw)))/r;
+ const toD=J=>new Date((J-2440587.5)*864e5);return{rise:toD(Jt-w/360),set:toD(Jt+w/360)}}
+const tzMin=dt=>{const [h,m]=dt.toLocaleTimeString('en-US',{timeZone:TZ,hour12:false,hour:'2-digit',minute:'2-digit'}).split(':').map(Number);return (h%24)*60+m};
+const fmtMin=m=>{m=((Math.round(m)%1440)+1440)%1440;const h=Math.floor(m/60),mm=m%60;return`${h%12||12}:${String(mm).padStart(2,'0')} ${h<12?'AM':'PM'}`};
+const round15=m=>Math.round(m/15)*15;
+const median=a=>{if(!a.length)return null;const b=a.slice().sort((x,y)=>x-y),i=Math.floor(b.length/2);return b.length%2?b[i]:(b[i-1]+b[i])/2};
+const sd=a=>{if(a.length<2)return null;const mu=avg(a);return Math.sqrt(avg(a.map(x=>(x-mu)**2)))};
+function circadian(D,k,s){
+ const sun=sunTimes(k),rise=tzMin(sun.rise),set=tzMin(sun.set),nx=sunTimes(addDays(k,1));
+ const wakes=Object.values(D).filter(d=>d.date<k&&d.date>=addDays(k,-14)&&d.sleep&&d.sleep.wake!=null).map(d=>d.sleep.wake).concat(s.wake!=null?[s.wake]:[]);
+ const beds=Object.values(D).filter(d=>d.date<=k&&d.date>=addDays(k,-14)&&d.sleep&&d.sleep.bed!=null).map(d=>d.sleep.bed);
+ const wake=s.wake!=null?s.wake:(median(wakes)??390),usual=wakes.length>=3?round15(median(wakes)):wake,spread=wakes.length>=4?sd(wakes):null;
+ const short=s.sleep!=null&&s.sleep<6||s.unref;
+ const lightStart=Math.max(wake,rise),lightEnd=Math.max(wake+60,rise+30);
+ const focus=[wake+120,wake+(short?240:300)],dip=[wake+420,wake+510];
+ const need=480,lightsOut=round15(usual-need-15+1440),caffeine=lightsOut-540,dim=lightsOut-180,screens=lightsOut-60;
+ // personal: when in the day do puzzles go best?
+ const buckets=[[0,2],[2,4],[4,6],[6,24]].map(([a,b])=>({a,b,v:[]}));
+ Object.values(D).forEach(d=>{if(!d.puzzle||!d.puzzle.t||!d.sleep||d.sleep.wake==null||!/T/.test(d.puzzle.t))return;const h=(tzMin(new Date(d.puzzle.t))-d.sleep.wake)/60;const bk=buckets.find(x=>h>=x.a&&h<x.b);if(bk)bk.v.push(d.puzzle.score)});
+ const tot=buckets.reduce((n,b)=>n+b.v.length,0),best=tot>=8?buckets.filter(b=>b.v.length>=3).sort((x,y)=>avg(y.v)-avg(x.v))[0]:null;
+ return{rise,set,dayLen:set-rise,nextRise:tzMin(nx.rise),wake,usual,spread,n:wakes.length,beforeSunrise:wake<rise,lightStart,lightEnd,focus,dip,short,lightsOut,caffeine,dim,screens,bedMedian:beds.length>=3?median(beds):null,best:best?{a:best.a,b:best.b,score:avg(best.v),n:best.v.length}:null};
+}
+
+// ---- statistics: exact, checked against SciPy ----
+function lgamma(x){const c=[76.18009172947146,-86.50532032941677,24.01409824083091,-1.231739572450155,0.1208650973866179e-2,-0.5395239384953e-5];let y=x,t=x+5.5;t-=(x+0.5)*Math.log(t);let s=1.000000000190015;for(let j=0;j<6;j++)s+=c[j]/++y;return -t+Math.log(2.5066282746310005*s/x)}
+function betacf(a,b,x){const MAX=300,EPS=3e-16,FP=1e-300;let qab=a+b,qap=a+1,qam=a-1,c=1,d=1-qab*x/qap;if(Math.abs(d)<FP)d=FP;d=1/d;let h=d;
+ for(let m=1;m<=MAX;m++){const m2=2*m;let aa=m*(b-m)*x/((qam+m2)*(a+m2));d=1+aa*d;if(Math.abs(d)<FP)d=FP;c=1+aa/c;if(Math.abs(c)<FP)c=FP;d=1/d;h*=d*c;
+  aa=-(a+m)*(qab+m)*x/((a+m2)*(qap+m2));d=1+aa*d;if(Math.abs(d)<FP)d=FP;c=1+aa/c;if(Math.abs(c)<FP)c=FP;d=1/d;const del=d*c;h*=del;if(Math.abs(del-1)<EPS)break}return h}
+function betai(a,b,x){if(x<=0)return 0;if(x>=1)return 1;const bt=Math.exp(lgamma(a+b)-lgamma(a)-lgamma(b)+a*Math.log(x)+b*Math.log(1-x));return x<(a+1)/(a+b+2)?bt*betacf(a,b,x)/a:1-bt*betacf(b,a,1-x)/b}
+// two-sided p-value for t with df degrees of freedom
+const pT=(t,df)=>!isFinite(t)?0:betai(df/2,0.5,df/(df+t*t));
+function ranks(a){const idx=a.map((v,i)=>[v,i]).sort((x,y)=>x[0]-y[0]),r=new Array(a.length);let i=0;while(i<idx.length){let j=i;while(j+1<idx.length&&idx[j+1][0]===idx[i][0])j++;const rk=(i+j)/2+1;for(let k=i;k<=j;k++)r[idx[k][1]]=rk;i=j+1}return r}
+function pearsonR(x,y){const n=x.length;let mx=0,my=0;for(let i=0;i<n;i++){mx+=x[i];my+=y[i]}mx/=n;my/=n;let sxy=0,sxx=0,syy=0;for(let i=0;i<n;i++){const a=x[i]-mx,b=y[i]-my;sxy+=a*b;sxx+=a*a;syy+=b*b}if(sxx<=1e-12||syy<=1e-12)return null;return Math.max(-1,Math.min(1,sxy/Math.sqrt(sxx*syy)))}
+// correlation of two series (null = missing); optional control series z (partial correlation)
+function corrStat(xs,ys,method,zs){
+ const X=[],Y=[],Z=[];for(let i=0;i<xs.length;i++){if(xs[i]==null||ys[i]==null||(zs&&zs[i]==null))continue;X.push(xs[i]);Y.push(ys[i]);if(zs)Z.push(zs[i])}
+ const n=X.length,k=zs?1:0;if(n<k+4)return{n,r:null};
+ const f=method==='spearman'?a=>ranks(a):a=>a,x=f(X),y=f(Y);let r=pearsonR(x,y);if(r==null)return{n,r:null,constant:true};
+ if(zs){const z=f(Z),rxz=pearsonR(x,z),ryz=pearsonR(y,z);if(rxz==null||ryz==null)return{n,r:null};const den=Math.sqrt((1-rxz*rxz)*(1-ryz*ryz));if(den<1e-12)return{n,r:null};r=Math.max(-1,Math.min(1,(r-rxz*ryz)/den))}
+ const df=n-2-k,t=Math.abs(r)>=1?Infinity:r*Math.sqrt(df/(1-r*r)),p=pT(Math.abs(t),df);
+ const zr=Math.atanh(Math.max(-0.999999,Math.min(0.999999,r))),se=(method==='spearman'?Math.sqrt(1+r*r/2):1)/Math.sqrt(n-3-k);
+ return{n,r,p,df,lo:Math.tanh(zr-1.959964*se),hi:Math.tanh(zr+1.959964*se)};
+}
+// Benjamini–Hochberg false discovery rate
+function bh(ps){const m=ps.length,o=ps.map((p,i)=>[p,i]).sort((a,b)=>a[0]-b[0]),q=new Array(m);let min=1;for(let j=m-1;j>=0;j--){min=Math.min(min,o[j][0]*m/(j+1));q[o[j][1]]=Math.min(1,min)}return q}
+
+// ---- what gets correlated: morning measures vs day/evening measures (no part-whole overlaps) ----
+const nightLogged=d=>!!(d&&(d.night||d.fuel||(d.did&&d.did.length)||d.light!=null));
+const amVals=(d,f)=>(d.checkins||[]).map(c=>c[f]).filter(v=>typeof v==='number');
+const FEAT=[
+ {id:'sleep',l:'Hours asleep',g:'Sleep & clock',w:'am',get:d=>d.sleep?d.sleep.h:null},
+ {id:'unref',l:'Woke unrefreshed',g:'Sleep & clock',w:'am',bin:1,get:d=>d.sleep?(d.sleep.unref?1:0):null},
+ {id:'bed',l:'Bedtime (later →)',g:'Sleep & clock',w:'am',time:1,get:d=>d.sleep&&d.sleep.bed!=null?d.sleep.bed:null},
+ {id:'wake',l:'Wake time (later →)',g:'Sleep & clock',w:'am',time:1,get:d=>d.sleep&&d.sleep.wake!=null?d.sleep.wake:null},
+ {id:'amEnergy',l:'Energy on waking',g:'Morning',w:'am',get:d=>avg(amVals(d,'energy'))},
+ {id:'amMood',l:'Morning mood',g:'Morning',w:'am',get:d=>avg(amVals(d,'mood'))},
+ {id:'amPain',l:'Morning pain',g:'Morning',w:'am',get:d=>avg(amVals(d,'pain'))},
+ {id:'amSpeech',l:'Morning speech difficulty',g:'Morning',w:'am',get:d=>{const v=amVals(d,'speech');return v.length?Math.max(...v):null}},
+ {id:'amSwallow',l:'Morning swallowing difficulty',g:'Morning',w:'am',get:d=>{const v=amVals(d,'swallow');return v.length?Math.max(...v):null}},
+ {id:'pmEnergy',l:'Evening energy',g:'Evening',w:'day',get:d=>d.night&&typeof d.night.energy==='number'?d.night.energy:null},
+ {id:'pmMood',l:'Mood today',g:'Evening',w:'day',get:d=>d.night&&typeof d.night.mood==='number'?d.night.mood:null},
+ {id:'pmPain',l:'Pain today',g:'Evening',w:'day',get:d=>d.night&&typeof d.night.pain==='number'?d.night.pain:null},
+ {id:'pmSpeech',l:'Speech difficulty today',g:'Evening',w:'day',get:d=>d.night&&typeof d.night.speech==='number'?d.night.speech:null},
+ {id:'pmSwallow',l:'Swallowing difficulty today',g:'Evening',w:'day',get:d=>d.night&&typeof d.night.swallow==='number'?d.night.swallow:null},
+ {id:'protein',l:'Protein',g:'Food & drink',w:'day',get:d=>d.fuel&&d.fuel.protein!=null?d.fuel.protein:null},
+ {id:'water',l:'Fluids',g:'Food & drink',w:'day',get:d=>d.fuel&&d.fuel.water!=null?d.fuel.water:null},
+ {id:'sugar',l:'Sweets',g:'Food & drink',w:'day',get:d=>d.fuel&&d.fuel.sugar!=null?d.fuel.sugar:null},
+ {id:'omega3',l:'Fish or omega-3',g:'Food & drink',w:'day',bin:1,get:d=>d.fuel&&d.fuel.omega3!=null?d.fuel.omega3:null},
+ {id:'greens',l:'Greens, beans or nuts',g:'Food & drink',w:'day',bin:1,get:d=>d.fuel&&d.fuel.greens!=null?d.fuel.greens:null},
+ {id:'supps',l:'Supplements taken',g:'Food & drink',w:'day',get:d=>d.fuel&&d.fuel.supps!=null?d.fuel.supps:null},
+ {id:'light',l:'Daylight delay (later →)',g:'Daylight & puzzle',w:'day',get:d=>d.light!=null?d.light:null},
+ {id:'puzzle',l:'Puzzle score',g:'Daylight & puzzle',w:'day',get:d=>d.puzzle&&!d.puzzle.short?d.puzzle.score:null}]
+ .concat([['outing','Went out'],['appt','Appointment'],['therapy','Therapy or exercise'],['visitors','Visitors or long talks'],['chores','Chores'],['travel','Long car ride'],['nap','Nap over an hour'],['screens','Late screens'],['caffeine','Caffeine after noon'],['alcohol','Alcohol'],['stress','Stress'],['heat','Heat exposure']].map(([k,l])=>({id:'a_'+k,l,g:'Activities',w:'day',bin:1,get:d=>nightLogged(d)?((d.did||[]).includes(k)?1:0):null})));
+{const O={protein:FUEL[0].o,water:FUEL[1].o,sugar:FUEL[2].o,omega3:FUEL[3].o,greens:FUEL[4].o,supps:FUEL[5].o,amMood:MOOD,pmMood:MOOD,amPain:PAIN,pmPain:PAIN,amSpeech:SPEECH,pmSpeech:SPEECH,amSwallow:SWALLOW,pmSwallow:SWALLOW,light:['<30 min','30–60 min','1–2 h','2+ h','none']};FEAT.forEach(f=>{if(O[f.id])f.opts=O[f.id]})}
+const CGROUPS=['Sleep & clock','Morning','Evening','Food & drink','Daylight & puzzle','Activities'];
+// mode 'next': day/evening features on day d vs morning features on day d+1. mode 'same': all pairs on the same date.
+function corrMatrix(days,o){
+ const D=Object.fromEntries(days.map(d=>[d.date,d])),keys=days.map(d=>d.date).sort(),F=FEAT.filter(f=>o.groups.includes(f.g));
+ const idx=k=>dayIndex(k),MIN=10;
+ let rows,cols,pairs=[];
+ if(o.mode==='next'){rows=F.filter(f=>f.w==='day');cols=F.filter(f=>f.w==='am');
+  const xs=keys.filter(k=>D[addDays(k,1)]);
+  rows.forEach((fr,i)=>cols.forEach((fc,j)=>{const X=xs.map(k=>fr.get(D[k])),Y=xs.map(k=>fc.get(D[addDays(k,1)])),Z=o.detrend?xs.map(idx):null;pairs.push(Object.assign({i,j,a:fr,b:fc,X,Y,keys:xs},corrStat(X,Y,o.method,Z)))}))}
+ else{rows=F;cols=F;
+  F.forEach((fa,i)=>F.forEach((fb,j)=>{if(j>=i)return;const X=keys.map(k=>fa.get(D[k])),Y=keys.map(k=>fb.get(D[k])),Z=o.detrend?keys.map(idx):null;pairs.push(Object.assign({i,j,a:fa,b:fb,X,Y,keys},corrStat(X,Y,o.method,Z)))}))}
+ const tested=pairs.filter(p=>p.r!=null&&p.n>=MIN),q=bh(tested.map(p=>p.p));tested.forEach((p,i)=>{p.q=q[i]});
+ return{rows,cols,pairs,tested:tested.length,min:MIN};
+}
+const strength=r=>{const a=Math.abs(r);return a<0.1?'no real':a<0.3?'a weak':a<0.5?'a moderate':'a strong'};
+function corrSentence(c,mode){
+ const A=c.a.l.replace(/ \(later →\)/,'').toLowerCase(),B=c.b.l.replace(/ \(later →\)/,'').toLowerCase(),up=c.r>0,next=mode==='next';
+ const lhs=c.a.bin?`On days with ${A.toLowerCase()}`:c.a.time?`The later the ${A}`:`The higher the ${A}`;
+ const rhs=c.b.bin?`${next?'the next morning was':'it was'} ${up?'more':'less'} often "${B}"`:c.b.time?`the ${up?'later':'earlier'} the ${B}${next?' the next morning':''}`:`the ${up?'higher':'lower'} the ${B}${next?' the next morning':''}`;
+ if(Math.abs(c.r)<0.1)return`${c.a.l} and ${c.b.l.toLowerCase()}${next?' the next morning':''} show essentially no relationship.`;
+ return c.a.bin?`${lhs}, ${rhs.replace(/^the /,'the ')} (${strength(c.r)} ${up?'positive':'negative'} link).`:`${lhs}, ${rhs} (${strength(c.r)} ${up?'positive':'negative'} link).`;
+}
+function corrVerdict(c,m){if(c.q<0.05)return{k:'ok',t:`Holds up after accounting for all ${m} comparisons on screen (false-discovery q = ${c.q.toFixed(3)}).`};
+ if(c.q<0.10)return{k:'mid',t:`Probably real but tentative (q = ${c.q.toFixed(2)}). Worth watching as more days come in.`};
+ if(c.p<0.05)return{k:'no',t:`The p-value (${c.p.toFixed(3)}) looks small on its own, but with ${m} comparisons on screen, about ${Math.round(m*0.05)} would look this good by luck alone (q = ${c.q.toFixed(2)}). Treat as chance for now.`};
+ return{k:'no',t:`Could easily be chance (p = ${c.p.toFixed(2)}, q = ${c.q.toFixed(2)}).`}}
+
+// ---- daily lift: quote, radical idea, three films ----
+// quotes checked against primary sources or Wikiquote's sourced sections; famous misattributions left out
+const QUOTES=[
+ ['The first principle is that you must not fool yourself, and you are the easiest person to fool.','Richard Feynman','"Cargo Cult Science," Caltech commencement, 1974'],
+ ['Extraordinary claims require extraordinary evidence.','Carl Sagan','Cosmos, 1980'],
+ ['A wise man, therefore, proportions his belief to the evidence.','David Hume','An Enquiry Concerning Human Understanding, 1748'],
+ ['If I have seen further it is by standing on the shoulders of Giants.','Isaac Newton','letter to Robert Hooke, 1675'],
+ ['Chance favors only the prepared mind.','Louis Pasteur','lecture at Lille, 1854 (translated)'],
+ ['The great tragedy of Science: the slaying of a beautiful hypothesis by an ugly fact.','Thomas Henry Huxley','address to the British Association, 1870'],
+ ['The important thing is not to stop questioning.','Albert Einstein','quoted in LIFE, 1955'],
+ ['Any sufficiently advanced technology is indistinguishable from magic.','Arthur C. Clarke','Profiles of the Future, 1973 edition'],
+ ['We can only see a short distance ahead, but we can see plenty there that needs to be done.','Alan Turing','"Computing Machinery and Intelligence," 1950'],
+ ['The Analytical Engine has no pretensions whatever to originate anything.','Ada Lovelace','notes on the Analytical Engine, 1843'],
+ ['Get your facts first, and then you can distort them as much as you please.','Mark Twain','quoted by Rudyard Kipling, From Sea to Sea, 1899'],
+ ['Genius is one per cent inspiration, ninety-nine per cent perspiration.','Thomas Edison','said c. 1903; printed in Harper\'s Monthly, 1932'],
+ ['Well done is better than well said.','Benjamin Franklin','Poor Richard\'s Almanack, 1737'],
+ ['Early to bed, and early to rise, makes a man healthy, wealthy and wise.','Benjamin Franklin','Poor Richard\'s Almanack, 1735'],
+ ['Lost time is never found again.','Benjamin Franklin','Poor Richard\'s Almanack, 1748'],
+ ['I cannot live without books.','Thomas Jefferson','letter to John Adams, 1815'],
+ ['Do what you can, with what you have, where you are.','Squire Bill Widener','as quoted by Theodore Roosevelt, Autobiography, 1913'],
+ ['I went to the woods because I wished to live deliberately.','Henry David Thoreau','Walden, 1854'],
+ ['Heaven is under our feet as well as over our heads.','Henry David Thoreau','Walden, 1854'],
+ ['There are two spiritual dangers in not owning a farm.','Aldo Leopold','A Sand County Almanac, 1949'],
+ ['Although the world is full of suffering, it is full also of the overcoming of it.','Helen Keller','Optimism, 1903'],
+ ['Today I consider myself the luckiest man on the face of the earth.','Lou Gehrig','farewell speech, Yankee Stadium, 1939'],
+ ['However difficult life may seem, there is always something you can do and succeed at.','Stephen Hawking','Cambridge symposium, 2012'],
+ ['That\'s one small step for man, one giant leap for mankind.','Neil Armstrong','Apollo 11, 1969'],
+ ['We choose to go to the Moon... not because they are easy, but because they are hard.','John F. Kennedy','Rice University, 1962'],
+ ['Plans are worthless, but planning is everything.','Dwight D. Eisenhower','speech, 1957'],
+ ['It\'s easier to ask forgiveness than it is to get permission.','Grace Hopper','interview, 1986'],
+ ['I watch the government and report the facts.','Will Rogers','Oklahoma humorist; traced by Quote Investigator'],
+ ['Science is a way of thinking much more than it is a body of knowledge.','Carl Sagan','"Why We Need to Understand Science," Skeptical Inquirer, 1990'],
+ ['The good thing about science is that it\'s true whether or not you believe in it.','Neil deGrasse Tyson','Real Time with Bill Maher, 2011'],
+ ['What I cannot create, I do not understand.','Richard Feynman','on his Caltech blackboard, 1988'],
+ ['A hen is only an egg\'s way of making another egg.','Samuel Butler','Life and Habit, 1878'],
+ ['It is a capital mistake to theorize before one has data.','Arthur Conan Doyle','"A Scandal in Bohemia," 1891'],
+ ['When you have eliminated the impossible, whatever remains, however improbable, must be the truth.','Arthur Conan Doyle','The Sign of the Four, 1890'],
+ ['Facts are stubborn things.','John Adams','defense in the Boston Massacre trial, 1770'],
+ ['The harder the conflict, the more glorious the triumph.','Thomas Paine','The American Crisis, 1776'],
+ ['Doubt is not a pleasant condition, but certainty is absurd.','Voltaire','letter to Frederick the Great, 1770 (translated)'],
+ ['Nothing is so firmly believed as that which we least know.','Michel de Montaigne','Essays, 1580 (translated)']];
+// bold but grounded ideas for limited mobility, slurred speech and fatigue; evidence stated plainly
+const IDEAS=[
+ {t:'Bank your voice on a good-speech day',d:'Phones can now learn your own voice from about 15 minutes of reading (on iPhone: Settings > Accessibility > Personal Voice). Then you type, and it speaks in your voice. Record on a morning when speech is clearest; it is insurance you hope not to need.',ev:'Proven technology'},
+ {t:'Type to talk on hard-speech days',d:'Speech gets worse with fatigue. On low days, let the phone speak typed words (iPhone Live Speech, Android and Windows have similar tools or apps) and save your voice for the people who matter most.',ev:'Proven technology'},
+ {t:'Train the breathing muscles behind your voice',d:'A small handheld breath trainer (expiratory muscle strength training) reliably builds breathing-out strength and cough strength in MS. Whether it improves speech itself is still unclear, so do it with a speech therapist who can set the resistance.',ev:'Moderate evidence for breath and cough; unclear for speech',when:p=>true},
+ {t:'Cool down before you go, not after',d:'For heat-sensitive nerves, pre-cooling with a cooling vest or neck wrap before activity can delay heat-related symptoms. Some people get a cooling vest covered through MS organizations.',ev:'Moderate evidence in MS',when:p=>p.heat},
+ {t:'Exercise in water',d:'Water carries most of your body weight, so you can move further and fall nowhere. Pool exercise in comfortably warm (not hot) water has shown benefits for fatigue and balance in MS. Ask about community pools with lifts.',ev:'Moderate evidence'},
+ {t:'Outsource one draining chore for good',d:'Pick the chore that costs the most energy for the least joy (mowing, deep cleaning, a weekly errand) and hand it off permanently. Spending energy is a budget decision; spend it on what you love.',ev:'Common sense, backed by pacing research'},
+ {t:'Let a watch warn you before you crash',d:'If you crash after doing too much, a smartwatch heart-rate alert set a little above your resting rate can tell you to sit down before you overspend. Ask your clinician what ceiling to set.',ev:'Early evidence; widely used in pacing',when:p=>p.pem},
+ {t:'Lift something twice a week',d:'Progressive strength training (bands, light weights, seated machines) improves strength and walking and can ease fatigue in MS. Start very light with a physical therapist and add a little at a time.',ev:'Moderate evidence',when:p=>!p.pem},
+ {t:'Get an occupational therapist into your house',d:'One home visit can turn up grab-bar spots, chair heights, bathroom setups and kitchen changes that save energy and prevent falls. Ask your doctor for a home safety evaluation.',ev:'Good evidence for fall prevention'},
+ {t:'Ask about devices for foot drop',d:'If your toes catch when you walk, an ankle-foot brace or a functional electrical stimulation device can lift the foot at the right moment, making walking safer and less tiring. A physical therapist can trial one with you.',ev:'Moderate evidence in MS'},
+ {t:'Build a smart home that does not need your voice',d:'Voice assistants struggle with slurred speech. Big buttons, motion-sensor lights and phone routines ("goodnight" turns everything off) do the same job with one tap.',ev:'Practical; no trials needed'},
+ {t:'Write a speech passport',d:'A wallet card or phone note: "I have a neurological condition that affects my speech. My thinking is fine. Please give me time, or let me type." Hand it over instead of repeating yourself.',ev:'Recommended by speech therapists'},
+ {t:'Map the week, not the day',d:'Spread the heavy days out: one outing, then a lighter day. Batch errands by route. Many people find a weekly plan smooths out the crash-and-recover cycle.',ev:'Pacing guidance'},
+ {t:'Grow something at sitting height',d:'Raised garden beds or big containers let you garden seated. Time with plants and outdoors is linked with better mood, and you get vegetables out of it.',ev:'Low to moderate evidence for wellbeing'},
+ {t:'Look for a clinical trial',d:'Trials can mean early access to new treatments and closer monitoring. Search ClinicalTrials.gov for your condition and "Oklahoma" or "Texas," then ask your neurologist which ones fit.',ev:'A real option at specialist centers'},
+ {t:'Call a peer, not a hotline',d:'Organizations like the National MS Society connect you with trained peers and navigators who live with the same condition. Talking to someone who gets it is linked with less isolation and better coping.',ev:'Moderate evidence for peer support'},
+ {t:'Do therapy from your chair',d:'Physical, speech and occupational therapy by video saves the energy a car trip costs. Ask whether your clinic offers telerehab for some sessions.',ev:'Comparable results in many studies'},
+ {t:'Treat insomnia like a skill, not a curse',d:'CBT for insomnia (CBT-I) works better long-term than sleeping pills and is available as guided apps and short courses. A cool, dark room and a fixed wake time are the core.',ev:'Strong evidence; first-line treatment'},
+ {t:'Ten minutes of mindfulness',d:'Mindfulness programs have shown small to moderate benefits for mood and fatigue in MS. It is free, seated and needs no speech.',ev:'Small to moderate evidence'},
+ {t:'Pre-write your asks',d:'Save five text templates for things you ask for often ("Can you pick up my prescription?", "Running late, will text"). One tap replaces a hard phone call.',ev:'Practical'},
+ {t:'Get a driving evaluation before someone takes the keys',d:'A certified driver rehabilitation specialist can test you and fit hand controls or a spinner knob, which can keep you driving safely and independently longer.',ev:'Established service'},
+ {t:'Measure your own experiments',d:'Pick one change (an earlier bedtime, a protein breakfast, a daily walk) and keep it for two weeks while you log. Your history charts will show whether it actually moved your mornings. Be your own skeptic.',ev:'The scientific method, n = 1'}];
+// G = all-time great, S = science, P = philosophical; one of each per day
+const MOVIES=[
+ ['G','Citizen Kane',1941,'Orson Welles','The film critics most often call the greatest ever made: a life told by the people who misjudged it.'],
+ ['G','The Godfather',1972,'Francis Ford Coppola','Family, power and America, in one of the most admired films of any era.'],
+ ['G','Casablanca',1942,'Michael Curtiz','A cynic in wartime finds out what he actually believes in.'],
+ ['G','Vertigo',1958,'Alfred Hitchcock','Topped the 2012 Sight & Sound critics poll; obsession as a mystery.'],
+ ['G','The Grapes of Wrath',1940,'John Ford','Okies on the road to California: Oklahoma\'s own story of grit.'],
+ ['G','Lawrence of Arabia',1962,'David Lean','Epic scale and a man who never quite belongs anywhere.'],
+ ['G','12 Angry Men',1957,'Sidney Lumet','One juror\'s reasonable doubt takes apart a room full of certainty.'],
+ ['G','To Kill a Mockingbird',1962,'Robert Mulligan','Quiet courage and evidence against prejudice.'],
+ ['G','The Searchers',1956,'John Ford','The great western, beautiful and deeply uneasy.'],
+ ['G','Unforgiven',1992,'Clint Eastwood','A western that strips the myth off the gunfighter.'],
+ ['G','It\'s a Wonderful Life',1946,'Frank Capra','What one ordinary life is worth to the people around it.'],
+ ['G','The Shawshank Redemption',1994,'Frank Darabont','Patience, small daily acts and hope, played as a long game.'],
+ ['S','2001: A Space Odyssey',1968,'Stanley Kubrick','Tools, evolution and a computer that won\'t open the pod bay doors.'],
+ ['S','Apollo 13',1995,'Ron Howard','Engineers improvising their way home: "Failure is not an option."'],
+ ['S','The Right Stuff',1983,'Philip Kaufman','Test pilots and the Mercury Seven; American nerve and the sound barrier.'],
+ ['S','Hidden Figures',2016,'Theodore Melfi','The NASA mathematicians whose numbers got John Glenn home.'],
+ ['S','October Sky',1999,'Joe Johnston','Coal-town kids teach themselves rocketry, one failed launch at a time.'],
+ ['S','Contact',1997,'Robert Zemeckis','From Carl Sagan\'s novel: a scientist demands evidence, then has to ask for belief.'],
+ ['S','Interstellar',2014,'Christopher Nolan','Farm country, a failing Earth and real relativity on screen.'],
+ ['S','The Martian',2015,'Ridley Scott','"Science the heck out of it": problem-solving as survival.'],
+ ['S','Awakenings',1990,'Penny Marshall','Oliver Sacks\'s true account of patients briefly freed from a neurological illness.'],
+ ['S','Lorenzo\'s Oil',1992,'George Miller','Parents take on a myelin-destroying disease and the medical establishment.'],
+ ['S','The Theory of Everything',2014,'James Marsh','Stephen Hawking\'s work and life with a motor neuron disease.'],
+ ['S','Close Encounters of the Third Kind',1977,'Steven Spielberg','An ordinary man who cannot let go of what he saw.'],
+ ['P','Arrival',2016,'Denis Villeneuve','Language changes how you experience time; a linguist decides what to do with that.'],
+ ['P','Gattaca',1997,'Andrew Niccol','A man the data says is not good enough, and what he does about it.'],
+ ['P','Blade Runner',1982,'Ridley Scott','What makes something human: memory, empathy or a test?'],
+ ['P','The Truman Show',1998,'Peter Weir','A man starts doubting the world that was built around him.'],
+ ['P','Groundhog Day',1993,'Harold Ramis','The same day over and over, until he spends it well.'],
+ ['P','Eternal Sunshine of the Spotless Mind',2004,'Michel Gondry','Would you erase painful memories if you could?'],
+ ['P','Sound of Metal',2019,'Darius Marder','A drummer losing his hearing learns stillness and a new kind of life.'],
+ ['P','Inherit the Wind',1960,'Stanley Kramer','The Scopes trial dramatized: evidence versus certainty in a small town.'],
+ ['P','Dr. Strangelove',1964,'Stanley Kubrick','The bleakest comedy about trusting systems over sense.'],
+ ['P','Being There',1979,'Hal Ashby','A simple gardener is mistaken for a genius; how easily we see what we expect.'],
+ ['P','Memento',2000,'Christopher Nolan','A man without short-term memory lives by notes and tattoos. Can he trust them?'],
+ ['P','Her',2013,'Spike Jonze','A lonely man and an AI: what companionship means when the voice is a machine.']];
+const mod=(a,n)=>((a%n)+n)%n;
+const quoteFor=k=>QUOTES[mod(dayIndex(k)*11,QUOTES.length)];
+function ideaFor(k,p){const L=IDEAS.filter(x=>!x.when||x.when(p||{}));return L[mod(dayIndex(k)*7+3,L.length)]}
+function moviesFor(k){const r=rngFor('films:'+k);return['G','S','P'].map(c=>{const L=MOVIES.filter(m=>m[0]===c);return L[Math.floor(r()*L.length)]})}
+// ---- AI review prompt ----
+const AIQ=[
+ ['patterns','What connects my evenings to my mornings?','Which activities, foods, fluids and supplements come before my good and bad mornings, and how confident can we be?'],
+ ['doctor','What should I raise at my next neurology visit?','A short, prioritized list of observations and questions to take to my care team.'],
+ ['change','Are my speech, swallowing or mobility changing?','Trends over time, and anything that should be checked sooner rather than later.'],
+ ['supps','Which supplements and habits deserve a closer look?','Evidence, sensible doses and possible interactions to review with my doctor or pharmacist.'],
+ ['thinking','How is my thinking (puzzle) performance trending?','Whether puzzle scores track with sleep, energy and time, and whether training seems to help.']];
+function aiPrompt(days,from,to,picks,p,sample){
+ const A=days.map(d=>agg(d,p)),pt=patterns(days),f=v=>v==null?'':(Math.round(v*10)/10);
+ const L=[];
+ L.push('I want your help reviewing my personal health log. About me: a 45-year-old man, about three years into a neurological or autoimmune condition, with limited mobility and slurred speech. I live in rural Oklahoma.');
+ L.push('I\'m a skeptic who likes science, so please: be evidence-based and say how strong the evidence is; separate correlation from causation; say plainly when my data is too thin to conclude anything; don\'t diagnose; and if anything looks urgent, tell me to contact my doctor. Use plain language and short sections, and end with specific questions I can take to my care team.');
+ L.push('');L.push('Please answer:');
+ picks.forEach((k,i)=>{const q=AIQ.find(x=>x[0]===k);L.push(`${i+1}. ${q[1]} ${q[2]}`)});
+ L.push('');L.push('HOW TO READ THE DATA');
+ L.push('- Self-reported in a tracking app called DayGuard. Morning check-in: sleep hours (and whether unrefreshed), energy on waking 0-10, mood 0-4 (very low to very good), pain 0-4 (none to severe), speech 0-2 (clear / a bit slurred / hard to understand), swallowing 0-2 (fine / careful / coughing or choking).');
+ L.push('- Night log for the same date: evening energy, mood and pain, worst speech and swallowing that day, activities, and food: protein 0-2 (none / 1 meal / 2+ meals), fluids 0-2 (<4 / 4-7 / 8+ cups), sweets 0-2 (none / some / a lot), omega-3 foods and greens (0/1), usual supplements 0-2 (none / some / all).');
+ L.push('- A "hard morning" = waking energy 3 or below, under 6 hours of sleep, or unrefreshed. Each sleep entry (with bedtime and wake time) describes the night BEFORE that date. "Daylight" = how soon after waking he first got daylight that day (0 within 30 min, 1 30-60 min, 2 1-2 h, 3 2+ h, 4 none).');
+ L.push('- Daily brain puzzle: one per day, five rotating types (processing speed, attention, executive function, visual memory, verbal memory), difficulty level 1-5 adapts; score 0-100%.');
+ L.push('');L.push('PROFILE');
+ L.push(`- Crashes after exertion (post-exertional malaise): ${p.pem?'yes':'no'}. Heat-sensitive: ${p.heat?'yes':'no'}.`);
+ L.push(`- Supplements taken regularly (doses not recorded): ${(p.supps||[]).length?(p.supps||[]).map(k=>(SUPPS.find(x=>x[0]===k)||['',k])[1]).join(', '):'none listed'}.`);
+ L.push('');L.push(`SUMMARY, ${from} to ${to}${sample?' (SAMPLE DATA, NOT REAL)':''}`);
+ const e=avg(A.filter(a=>a.amEnergy!=null).map(a=>a.amEnergy)),sl=avg(A.filter(a=>a.sleep!=null).map(a=>a.sleep));
+ L.push(`- Days logged: ${days.length}. Average waking energy: ${f(e)}/10. Average sleep: ${f(sl)} h. Hard mornings: ${A.filter(isHard).length}. Puzzles done: ${A.filter(a=>a.puzzle).length}.`);
+ if(pt.ok){L.push(`- App's own pattern check (associations only): overall hard-morning rate ${pct(pt.base)}; after each item logged the night before:`);pt.rows.forEach(r=>L.push(`  ${r.name}: ${pct(r.rate)} (${r.n} times)`))}
+ L.push('');L.push('DAILY LOG (date | sleep, bed-wake | daylight | morning E/M/P/S/Sw | evening E/M/P/S/Sw | activities | food | puzzle | notes)');
+ days.forEach(d=>{const c=(d.checkins||[]),m=c[0],n=d.night,fu=d.fuel||{},z=d.puzzle;
+  const st=x=>x?[x.energy,x.mood,x.pain,x.speech,x.swallow].map(v=>v==null?'-':v).join('/'):'-';
+  const food=Object.keys(fu).length?FUEL.filter(x=>fu[x.k]!=null).map(x=>x.k+'='+fu[x.k]).join(' '):'-';
+  L.push([d.date,d.sleep?d.sleep.h+'h'+(d.sleep.unref?' unrefreshed':'')+(d.sleep.bed!=null&&d.sleep.wake!=null?`, ${fmtMin(d.sleep.bed)}-${fmtMin(d.sleep.wake)}`:''):'-',d.light!=null?String(d.light):'-',st(m)+(c.length>1?` (+${c.length-1} more check-ins)`:''),st(n),(d.did||[]).map(k=>ACTNAME[k]||k).join(', ')||'-',food,z?`${z.type} L${z.level} ${pct(z.score)}`:'-',(d.notes||'').replace(/\s+/g,' ').slice(0,300)||'-'].join(' | '))});
+ return L.join('\n');
+}
+/*ENGINE END*/
+
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const esc=s=>String(s).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+let LIVE={};try{LIVE=JSON.parse($('#live').textContent)}catch(e){}
+const AIR=Object.assign({place:'Colbert, OK',aqi:0,category:'Unknown',tempF:60},LIVE.air||{});
+const aqiCol=a=>a<=50?'#2f9e61':a<=100?'#b99600':a<=150?'#e07b00':a<=200?'#d4372c':'#8f3f97';
+const ranAt=LIVE.run?new Date(LIVE.run).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit',timeZone:'America/Chicago'})+' CT':'unknown';
+$('#air').innerHTML=`<div class="aqi" style="background:${aqiCol(AIR.aqi)}"><b>${+AIR.aqi}</b><span>AQI</span></div><div><h2>Air in ${esc(AIR.place)}: ${esc(AIR.category)}</h2><div class="facts"><span>PM2.5 ${esc(AIR.pm25)} µg/m³</span><span>Ozone ${esc(AIR.o3)} ppb</span><span>About ${esc(AIR.tempF)}°F</span></div><p>Reading from ${esc(AIR.time)} · modeled; Colbert has no ground monitor. ${/^https:\/\//.test(AIR.url||'')?`<a href="${esc(AIR.url)}" target="_blank" rel="noopener">Check now ↗</a>`:''}</p></div>`;
+
+// ---------- daily lift ----------
+function renderQuote(){const q=quoteFor(today());$('#qotd').innerHTML=`<p>\u201c${esc(q[0])}\u201d</p><cite>${esc(q[1])} · ${esc(q[2])}</cite>`}
+
+// ---------- storage ----------
+/* VERSION: change these two lines for each release, and add a line to CHANGELOG.md */
+const APP_VERSION='1.0', APP_UPDATED='November 24, 2026';
+try{const v=document.getElementById('appVer'),u=document.getElementById('appBuilt');if(v)v.textContent=APP_VERSION;if(u)u.textContent=APP_UPDATED}catch(e){}
+const LKEY='dg-tracker-v1';
+const S={mode:'local',col:null,days:{},profile:{pem:false,heat:false,supps:[]},sample:null};
+function loadLocal(){try{const o=JSON.parse(localStorage.getItem(LKEY)||'null');if(o){S.days=o.days||{};Object.assign(S.profile,o.profile||{})}}catch(e){}}
+// every change is also cached on this device, in every mode, so a dropped connection never loses an entry
+function saveLocal(){try{localStorage.setItem(LKEY,JSON.stringify({days:S.days,profile:S.profile}))}catch(e){}}
+const today=()=>keyOf(new Date());
+function day(k){return S.days[k]||(S.days[k]={kind:'day',date:k,checkins:[],did:[],notes:'',sleep:null})}
+const chains={},timers={};
+function persist(k,now){
+ saveLocal();if(S.mode!=='cloud')return Promise.resolve(true);
+ clearTimeout(timers[k]);
+ const go=()=>{const body=JSON.parse(JSON.stringify(k==='profile'?Object.assign({kind:'profile'},S.profile):S.days[k]));
+  return chains[k]=(chains[k]||Promise.resolve()).then(()=>S.mode==='cloud'?S.col.doc(k==='profile'?'profile':'day-'+k).set(body):null).then(()=>{saveLocal();return true}).catch(e=>{
+   const code=e&&e.code;
+   if(['invalid_argument','not_granted','revoked','capability_disabled','capability_removed'].includes(code)){toLocal();return true}
+   storeMsg('err',code);return false})};
+ if(now)return go();
+ return new Promise(r=>{timers[k]=setTimeout(()=>r(go()),700)});
+}
+// the account refused this viewer's writes (e.g. someone opening a shared link): keep everything on this device instead
+function toLocal(){S.mode='local';S.col=null;S.fallback=true;saveLocal();storeMsg('fallback')}
+function storeMsg(kind,code){
+ const el=$('#store'),ks=Object.keys(S.days).filter(k=>logged(S.days[k])).sort(),n=ks.length,since=ks[0]?` since ${fmtDateY(ks[0])}`:'';
+ if(kind==='cloud')el.innerHTML=`<b>History saved to your account</b><p>${n} day${n===1?'':'s'} logged${since}. Private to you and available wherever you're signed in to Claude.</p>`;
+ else if(kind==='fallback'||(kind==='local'&&S.fallback))el.innerHTML=`<b>History saved on this device</b><p>${n} day${n===1?'':'s'} logged${since}. This link can't save to a Claude account, so entries stay in this browser. Use "Back up my history" on the Print report tab now and then.</p>`;
+ else if(kind==='err')el.innerHTML=`<b>Couldn't save the last change to your account</b><p>Check your connection and try again.${code==='quota_exceeded'?' Your history storage is full.':''}</p>`;
+ else el.innerHTML=`<b>History saved in this browser</b><p>${n} day${n===1?'':'s'} logged${since}. Open this page while signed in to Claude to keep it in your account across devices.</p>`;
+}
+async function connect(){
+ let done=false;const timer=setTimeout(()=>{if(!done)storeMsg('local')},10000);
+ try{
+  const C=window.claude;if(!C||typeof C.use!=='function')throw 0;
+  const [db,user]=await Promise.all([C.use('db'),C.use('user')]);
+  const uid=user?await user.id():null;if(!db||!uid)throw 0;
+  const col=db.collection('data/users/'+uid);
+  const [snap,prof]=await Promise.all([col.where('kind','==','day').limit(1000).get(),col.doc('profile').get()]);
+  const cloud={};snap.docs.forEach(d=>{const v=d.data();if(v&&v.date)cloud[v.date]=JSON.parse(JSON.stringify(v))});
+  const local=S.days;S.col=col;S.mode='cloud';
+  // merge the device cache with the account copy; upload any day the device knows more about
+  S.days=Object.assign({},cloud);const up=[];
+  Object.keys(local).forEach(k=>{if(!logged(local[k]))return;const m=mergeDay(cloud[k],local[k]);if(JSON.stringify(m)!==JSON.stringify(cloud[k]||null)){S.days[k]=m;up.push(k)}});
+  if(prof.exists)Object.assign(S.profile,prof.data());
+  done=true;clearTimeout(timer);
+  saveLocal();for(const k of up){await persist(k,true);if(S.mode!=='cloud')break}
+  storeMsg(S.mode==='cloud'?'cloud':'fallback');refreshAll();
+ }catch(e){done=true;clearTimeout(timer);S.mode='local';storeMsg('local')}
+}
+
+// ---------- shared controls ----------
+const seg=(id,opts,name)=>{$('#'+id).innerHTML=opts.map(([v,l])=>`<label><input type="radio" name="${name}" value="${v}"><span>${l}</span></label>`).join('')};
+const radio=n=>{const el=$(`input[name=${n}]:checked`);return el?el.value:null};
+const setRadio=(n,v)=>{$$(`input[name=${n}]`).forEach(i=>{i.checked=v!=null&&i.value===String(v)})};
+const E11=Array.from({length:11},(_,i)=>[i,i]);
+seg('energy',E11,'energy');seg('mood',MOOD.map((l,i)=>[i,l]),'mood');seg('pain',PAIN.map((l,i)=>[i,l]),'pain');seg('speech',SPEECH.map((l,i)=>[i,l]),'speech');seg('swallow',SWALLOW.map((l,i)=>[i,l]),'swallow');seg('mob',MOB,'mob');
+seg('sleep',[3,4,5,6,7,8,9,10].map(h=>[h,h===3?'3 or less':h===10?'10+':h]),'sleep');seg('hours',[[4,'4 hours'],[5,'5 hours'],[6,'6 hours']],'hours');
+const BEDS=Array.from({length:11},(_,i)=>1200+i*30).concat([1530]),WAKES=Array.from({length:11},(_,i)=>270+i*30).concat([600]);
+seg('bed',BEDS.map(m=>[m,m===1530?'Later':fmtMin(m).replace(':00','')]),'bed');seg('wake',WAKES.map(m=>[m,m===600?'Later':fmtMin(m).replace(':00','')]),'wake');
+seg('n-light',LIGHT.map((l,i)=>[i,l]),'nlight');
+seg('n-energy',E11,'nenergy');seg('n-mood',MOOD.map((l,i)=>[i,l]),'nmood');seg('n-pain',PAIN.map((l,i)=>[i,l]),'npain');seg('n-speech',SPEECH.map((l,i)=>[i,l]),'nspeech');seg('n-swallow',SWALLOW.map((l,i)=>[i,l]),'nswallow');
+$('#coming').innerHTML=COMING.map(([v,l])=>`<label class="chk"><input type="checkbox" name="coming" value="${v}"> ${l}</label>`).join('');
+$('#red').innerHTML=RED.map(r=>`<label class="chk"><input type="checkbox" name="red" value="${r.id}"> ${r.name}</label>`).join('');
+$('#n-red').innerHTML=RED.map(r=>`<label class="chk"><input type="checkbox" name="nred" value="${r.id}"> ${r.name}</label>`).join('');
+$('#nacts').innerHTML=ACTS.map(([k,l])=>`<label class="chk"><input type="checkbox" data-act="${k}"> ${l}</label>`).join('');
+$('#supps').innerHTML=SUPPS.map(([k,l])=>`<label class="chk"><input type="checkbox" data-supp="${k}"> ${l}</label>`).join('');
+function emergencyHTML(ids){const em=RED.filter(r=>ids.includes(r.id));if(!em.length)return'';const e9=em.some(r=>r.a==='911'),e8=em.some(r=>r.a==='988');
+ return`<div class="emerg" role="alert"><h2>Get help now</h2><p>You marked: <b>${em.map(r=>esc(r.name.toLowerCase())).join('; ')}</b>.</p>${e9?'<p class="big">Call 911 now. If speaking is hard, someone else can call, or text 911 where available.</p>':''}${e8?'<p class="big">Call or text 988, the Suicide &amp; Crisis Lifeline, any time. If you might act on these thoughts now, call 911.</p>':''}<p>A sudden change in speech or one-sided weakness can be a stroke. Note the time it started.</p></div>`}
+const ring=(v,l,sub)=>`<div><div class="ring" style="--v:${v==null?0:Math.round(v*100)}"><span>${pct(v)}</span></div><b>${l}</b>${sub?`<small>${sub}</small>`:''}</div>`;
+
+// ---------- MORNING ----------
+function readS(){const num=(n,d)=>{const v=radio(n);return v==null?d:+v};
+ return{bed:num('bed',null),wake:num('wake',null),energy:num('energy',5),mood:num('mood',2),pain:num('pain',1),speech:num('speech',1),swallow:num('swallow',0),mob:radio('mob')||'unsteady',sleep:num('sleep',7),unref:$('#unref').checked,hours:num('hours',4),coming:$$('input[name=coming]:checked').map(i=>i.value).filter(v=>v!=='none'),red:$$('input[name=red]:checked').map(i=>i.value),newneuro:$('#newneuro').checked,fever:$('#fever').checked}}
+function initForm(){
+ const d=S.days[today()],last=(d&&d.checkins.length)?d.checkins[d.checkins.length-1]:null;
+ let prev=null;for(const k of Object.keys(S.days).sort().reverse()){const c=S.days[k].checkins;if(c&&c.length){prev=c[c.length-1];break}}
+ const src=last||prev||{energy:5,mood:2,pain:1,speech:1,swallow:0,mob:'unsteady'};
+ setRadio('energy',src.energy);setRadio('mood',src.mood);setRadio('pain',src.pain);setRadio('speech',src.speech);setRadio('swallow',src.swallow);setRadio('mob',src.mob);
+ if(d&&d.sleep){setRadio('sleep',Math.max(3,Math.min(10,Math.round(d.sleep.h))));$('#unref').checked=!!d.sleep.unref}else{setRadio('sleep',7);$('#unref').checked=false}
+ const hist=k=>Object.values(S.days).filter(x=>x.sleep&&x.sleep[k]!=null&&x.date>=addDays(today(),-14)).map(x=>x.sleep[k]);
+ const snap=(arr,v)=>arr.reduce((a,b)=>Math.abs(b-v)<Math.abs(a-v)?b:a);
+ setRadio('bed',d&&d.sleep&&d.sleep.bed!=null?d.sleep.bed:snap(BEDS,median(hist('bed'))??1320));setRadio('wake',d&&d.sleep&&d.sleep.wake!=null?d.sleep.wake:snap(WAKES,median(hist('wake'))??390));sleepTouched=!!(d&&d.sleep);showTib();
+ if(!radio('hours'))setRadio('hours',4);
+ $('#pem').checked=!!S.profile.pem;$('#heat').checked=!!S.profile.heat;$$('[data-supp]').forEach(i=>{i.checked=(S.profile.supps||[]).includes(i.dataset.supp)});
+ const h=new Date().getHours();$('#hello').textContent=h<12?'Good morning':h<17?'Good afternoon':'Good evening';
+}
+let sleepTouched=false;
+function showTib(){const s=readS();if(s.bed==null||s.wake==null){$('#tib').textContent='';return}const tib=(s.wake+1440-s.bed)/60;const eff=s.sleep/tib;$('#tib').textContent=`· about ${(Math.round(tib*2)/2)} h in bed${tib>0&&eff<=1?`, asleep about ${Math.round(eff*100)}% of it`:''}`}
+const blockCost=b=>b.c>0?`<span class="cost minus">−${b.c} energy</span>`:b.c<0?`<span class="cost plus">+${Math.abs(b.c)} energy</span>`:`<span class="cost zero">no cost</span>`;
+function projSVG(start,proj,cap,W,H){const n=proj.length;if(!n)return'';const x=i=>8+(W-16)*i/n,y=v=>6+(H-26)*(1-v/10);let d=`M${x(0)},${y(start)}`;proj.forEach((v,i)=>{d+=`H${x(i)}V${y(v)}H${x(i+1)}`});
+ return`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Projected energy across the plan, from ${start} to ${proj[n-1]} of 10"><path d="${d}V${y(0)}H${x(0)}Z" fill="var(--ambg)"/><path d="${d}" fill="none" stroke="var(--amber)" stroke-width="2.5" vector-effect="non-scaling-stroke"/><line x1="8" x2="${W-8}" y1="${y(cap)}" y2="${y(cap)}" stroke="var(--mute)" stroke-dasharray="4 4" vector-effect="non-scaling-stroke"/></svg>`}
+const pzIcon=`<svg viewBox="0 0 28 28" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><rect x="3" y="3" width="9" height="9" rx="2"/><rect x="16" y="3" width="9" height="9" rx="2" fill="#fff"/><rect x="3" y="16" width="9" height="9" rx="2" fill="#fff"/><rect x="16" y="16" width="9" height="9" rx="2"/></svg>`;
+function tlSVG(C){const a=240,b=1440+60,W=1000,H=50,x=m=>((Math.min(b,Math.max(a,m))-a)/(b-a))*W;
+ const band=(m1,m2,y,h,fill,op)=>`<rect x="${x(m1)}" y="${y}" width="${Math.max(2,x(m2)-x(m1))}" height="${h}" rx="4" fill="${fill}" ${op?`opacity="${op}"`:''}/>`;
+ let g=band(a,b,8,22,'var(--q1)')+band(C.rise,C.set,8,22,'var(--ambg)')+band(C.lightStart,C.lightEnd,8,22,'var(--amber)',.75)+band(C.focus[0],C.focus[1],34,10,'var(--s1)')+band(C.dip[0],C.dip[1],34,10,'var(--line)')+band(C.dim,C.lightsOut,34,10,'var(--q2)');
+ g+=`<line x1="${x(C.wake)}" x2="${x(C.wake)}" y1="2" y2="48" stroke="var(--ink)" stroke-width="3"/><line x1="${x(C.lightsOut)}" x2="${x(C.lightsOut)}" y1="2" y2="48" stroke="var(--ink)" stroke-width="3" stroke-dasharray="5 4"/>`;
+ const labs=[360,720,1080,1440].map(m=>`<span style="left:${(x(m)/W*100).toFixed(2)}%">${m===720?'noon':m===1440?'midnight':fmtMin(m).replace(':00','')}</span>`).join('');
+ return`<div class="tlx">${labs}</div><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Day timeline: daylight ${fmtMin(C.rise)} to ${fmtMin(C.set)}, focus ${fmtMin(C.focus[0])} to ${fmtMin(C.focus[1])}, lights out ${fmtMin(C.lightsOut)}">${g}</svg>`}
+function clockHTML(C,s){
+ const dl=`${Math.floor(C.dayLen/60)} h ${C.dayLen%60} min`;
+ const rows=[
+  ['Sunrise',`${fmtMin(C.rise)} · sunset ${fmtMin(C.set)} in Colbert`,`${dl} of daylight today.`],
+  ['Get daylight',`${fmtMin(C.lightStart)}–${fmtMin(C.lightEnd)}`,C.beforeSunrise?`You woke before sunrise: bright indoor lights now, then 15–20 minutes outside or at a bright window once the sun is up.`:`Within an hour of waking, outdoors or at a bright window. Even a cloudy sky is far brighter than indoor light.`],
+  ['Peak focus',`${fmtMin(C.focus[0])}–${fmtMin(C.focus[1])}`,(C.short?'Shorter than usual after a rough night. ':'')+'Best time for the puzzle, calls and anything that needs clear speech.'+(C.best?` Your own history: puzzle scores are best ${C.best.a}–${C.best.b===24?'+':C.best.b} hours after waking (${pct(C.best.score)} on average).`:'')],
+  ['Afternoon dip',`${fmtMin(C.dip[0])}–${fmtMin(C.dip[1])}`,'Alertness naturally sags here. Plan rest, not hard tasks.'],
+  ['Last caffeine',`by ${fmtMin(C.caffeine)}`,'About 9 hours before lights out, so it doesn\'t cut into tonight\'s sleep.'],
+  ['Tonight',`dim lights ${fmtMin(C.dim)} · lights out ${fmtMin(C.lightsOut)}`,`That gives about 8 hours before your ${C.n>=3?'usual ':''}${fmtMin(C.usual)} wake-up. `+(C.short?'After a short night, keep tomorrow\'s wake time the same and go to bed a little earlier, rather than sleeping in.':'Keep the wake time the same every day, weekends too.')]];
+ if(C.spread!=null)rows.push(['Regularity',C.spread<=30?'Steady':`varies ±${Math.round(C.spread)} min`,C.spread<=30?`Your wake time has stayed within about half an hour over ${C.n} days. That consistency matters as much as hours slept.`:`Your wake time has moved about ${Math.round(C.spread)} minutes either way over ${C.n} days. Holding it within 30 minutes is one of the simplest changes with real evidence behind it.`]);
+ return`<div class="clock"><h3>Your body clock today</h3><p class="sub">Woke ${fmtMin(C.wake)}. Built from your wake time and today's sun in Colbert.</p><div class="tl">${tlSVG(C)}</div><div class="tlk"><span><i style="background:var(--ambg);outline:1px solid var(--line)"></i>Daylight</span><span><i style="background:var(--amber)"></i>Get light</span><span><i style="background:var(--s1)"></i>Peak focus</span><span><i style="background:var(--line)"></i>Dip</span><span><i style="background:var(--q2)"></i>Dim lights</span><span>solid line: woke · dashed: lights out</span></div>${rows.map(r=>`<div class="crow"><b>${esc(r[0])}</b><span>${esc(r[1])}<small>${esc(r[2])}</small></span></div>`).join('')}</div>`;
+}
+function renderPlan(){
+ const s=readS(),p={pem:$('#pem').checked,heat:$('#heat').checked},k=today(),D=S.days;
+ const el=$('#plan'),em=emergencyHTML(s.red);if(em){el.innerHTML=em;return}
+ const ml=morningLinks(D,k,s,S.profile),yd=D[addDays(k,-1)];
+ s.recovery=p.pem&&((ml.y&&ml.y.did.some(x=>['outing','appt','therapy','walk','chores','travel','visitors'].includes(x))&&s.energy<=4)||s.energy<=2);
+ const C=circadian(D,k,s);s.circ=C;
+ s.puzzleDone=!!(D[k]&&D[k].puzzle);s.headProtein=!!(yd&&yd.fuel&&(yd.fuel.protein===0||yd.fuel.sugar===2));
+ const P=buildPlan(s,p,AIR,new Date(),s.hours);
+ const lvl=s.energy,cls=lvl<=3?'low':lvl>=7?'hi':'',usable=p.pem?Math.floor(lvl*0.7):lvl;
+ const label=s.recovery?'Recovery time':lvl<=3?'Low battery':lvl<=6?'Half battery':'Good battery';
+ let h=`<div class="bat"><div class="cells ${cls}" aria-hidden="true">${Array.from({length:10},(_,i)=>`<i class="${i<lvl?'on':''}${p.pem&&i===usable-1&&usable<lvl?' cap':''}"></i>`).join('')}</div><b>${label} · ${lvl}/10</b><p>${s.recovery?'You crashed or are close to it. This plan keeps you mostly resting so the next days start higher.':p.pem?`Plan to spend only up to the dashed cell (${usable} of ${lvl}) so you stay clear of a crash.`:'Spend it on what matters most, early; rest before it runs low.'}</p></div>`;
+ // what we know this morning
+ const ss=sleepScore({sleep:s.sleep,unref:s.unref});
+ h+=`<div class="snap">${ring(ss,'Last night\'s sleep',`${s.sleep}${s.sleep>=10?'+':''} h${s.unref?', unrefreshed':''}`)}${ring(ml.y?ml.y.dayScore:null,'Yesterday','day score')}${ring(ml.y?ml.y.mito:null,'Yesterday','energy support')}${ring(ml.y?ml.y.myelin:null,'Yesterday','nerve support')}</div>`;
+ h+=clockHTML(C,s);
+ // last night's log -> this morning
+ if(ml.logged){const y=ml.y,fu=y.fuel?FUEL.filter(x=>y.fuel[x.k]!=null&&x.k!=='supps'&&x.k!=='greens').map(x=>x.q.split(' (')[0].split(',')[0].toLowerCase()+': '+x.o[y.fuel[x.k]].toLowerCase()).join(' · '):'';
+  h+=`<div class="ylog"><h3>Last night's log → this morning</h3><p>${esc(fmtDateY(ml.yk))}: ${y.did.length?esc(y.did.map(x=>(ACTNAME[x]||x).toLowerCase()).join(', ')):'no activities logged'}${fu?'. '+esc(fu):''}.</p>`;
+  h+=ml.links.length?ml.links.map(l=>`<div class="link ${l.kind}"><i></i><span>${esc(l.text)}</span></div>`).join('')+(ml.verdict?`<p class="verdict">${esc(ml.verdict)}</p>`:''):`<p class="hint">${ml.ptOk?'Nothing from yesterday stands out in your history, good or bad.':`Your personal patterns start after about 10 logged nights (${ml.ptN||0} so far). Then this card shows which evenings come before your best and worst mornings.`}</p>`;
+  h+=`</div>`;
+ }else h+=`<div class="ylog"><h3>No night log for yesterday</h3><p>Tap what you did yesterday and it gets saved to that night. Over time this is how the page learns what helps your mornings.</p><div class="checks" style="margin-top:8px">${ACTS.map(([kk,l])=>`<label class="chk"><input type="checkbox" data-yact="${kk}" ${(yd&&(yd.did||[]).includes(kk))?'checked':''}> ${l}</label>`).join('')}</div><span class="saved" id="ysaved" role="status"></span></div>`;
+ if(ml.head.length)h+=`<div class="head"><b>Head start from yesterday</b>${ml.head.map(x=>`<p>${esc(x)}</p>`).join('')}</div>`;
+ const pt=puzzleType(k),pd=D[k]&&D[k].puzzle;
+ h+=`<a class="pzcard" href="#puzzle" style="text-decoration:none;color:inherit"><span class="ico">${pzIcon}</span><span><b>Today's puzzle: ${esc(pt.name)}</b><p>${esc(pt.skill)} · about ${pt.mins} minutes${pd?'':' · best while your energy is highest'}</p></span>${pd?`<span class="done">Done · ${pct(pd.score)}</span>`:'<span class="btn ghost" style="display:inline-flex;align-items:center">Start</span>'}</a>`;
+ {const I=ideaFor(k,Object.assign({},S.profile,p));h+=`<div class="idea"><span class="k">Today's radical idea</span><h3>${esc(I.t)}</h3><p>${esc(I.d)}</p><span class="ev">${esc(I.ev)}</span></div>`}
+ if(s.newneuro&&!s.fever)h+=`<div class="alert" role="alert"><h3>Call your neurologist's office today</h3><p>New or worse symptoms lasting more than 24 hours, without a fever, can be a relapse or flare. It is usually not an emergency, but don't wait for your next visit. If symptoms came on suddenly, call 911.</p></div>`;
+ if(s.fever)h+=`<div class="alert"><h3>Infection can bring old symptoms back for a while</h3><p>Rest, fluids, and call your doctor if the fever lasts more than a day or two or you feel much worse. No exercise until it passes.</p></div>`;
+ h+=`<h2 style="margin-top:16px">Your next ${s.hours} hours</h2><div class="proj"><div class="lab"><span>Battery across the plan</span><span>ends near ${P.end.toFixed(1).replace('.0','')}/10</span></div>${projSVG(lvl,P.proj,Math.min(10,lvl+2),600,92)}<div class="lab"><span>${fmtTime(P.start)}</span><span>dashed line: most a rest can refill today</span></div></div>`;
+ h+=`<ol class="blocks">${P.blocks.map(b=>`<li class="${b.rest?'rest':''}"><time>${fmtTime(b.at)}</time><div><h3>${esc(b.t)}</h3><p>${esc(b.d)}</p></div>${blockCost(b)}</li>`).join('')}</ol><div class="notes"><b>All through the plan</b>${P.notes.map(n=>`<p>${esc(n)}</p>`).join('')}</div>`;
+ const ins=insights(Object.values(S.days),k);if(ins.length)h+=`<h3 style="margin-top:18px">From your history</h3>`+ins.map(c=>`<div class="card ${c.warn?'warn':''}"><b>${esc(c.t)}</b><p>${esc(c.d)}</p></div>`).join('');
+ el.innerHTML=h;
+}
+$('#plan').addEventListener('change',e=>{const kk=e.target.dataset.yact;if(!kk)return;const d=day(addDays(today(),-1)),set=new Set(d.did);e.target.checked?set.add(kk):set.delete(kk);d.did=[...set];const m=$('#ysaved');m.textContent='Saving…';persist(d.date).then(ok=>{const mm=$('#ysaved');if(mm)mm.textContent=ok?'Saved':'Not saved'});storeMsg(S.mode)});
+$('#f').addEventListener('change',e=>{
+ if(e.target.name==='sleep')sleepTouched=true;
+ if((e.target.name==='bed'||e.target.name==='wake')&&!sleepTouched){const s=readS();if(s.bed!=null&&s.wake!=null){const h=Math.round((s.wake+1440-s.bed)/60-0.5);setRadio('sleep',Math.max(3,Math.min(10,h)))}}
+ if(['bed','wake','sleep'].includes(e.target.name))showTib();if(e.target.id==='pem'||e.target.id==='heat'){S.profile.pem=$('#pem').checked;S.profile.heat=$('#heat').checked;persist('profile')}if(e.target.dataset.supp)return;renderPlan();$('#savedmsg').textContent=''});
+$('#supps').addEventListener('change',()=>{S.profile.supps=$$('[data-supp]:checked').map(i=>i.dataset.supp);persist('profile');renderFuel($('#fuel-pm'));renderPlan()});
+$('#save').addEventListener('click',async()=>{const s=readS(),d=day(today());d.sleep={h:s.sleep,unref:s.unref,bed:s.bed,wake:s.wake};
+ d.checkins.push({t:new Date().toISOString(),energy:s.energy,mood:s.mood,pain:s.pain,speech:s.speech,swallow:s.swallow,mob:s.mob,newneuro:s.newneuro,fever:s.fever,red:s.red});
+ $('#save').disabled=true;$('#savedmsg').textContent='Saving…';const ok=await persist(today(),true);$('#save').disabled=false;
+ $('#savedmsg').textContent=ok?`Saved at ${fmtTime(new Date())}`:'Not saved. Try again.';storeMsg(S.mode);renderPlan()});
+$('#jump').addEventListener('click',e=>{e.preventDefault();$('#plan').scrollIntoView({behavior:'smooth'})});
+
+// ---------- NIGHT ----------
+const nKey=()=>$('#ndate').value||today();
+function renderFuel(box){
+ const k=nKey(),d=S.days[k]||{},f=d.fuel||{},hasS=(S.profile.supps||[]).length,yd=S.days[addDays(k,-1)];
+ box.innerHTML=FUEL.filter(x=>x.k!=='supps'||hasS).map(x=>`<p class="q">${x.q}</p><div class="seg">${x.o.map((l,i)=>`<label><input type="radio" name="fu-${x.k}" data-fk="${x.k}" value="${i}" ${f[x.k]===i?'checked':''}><span>${l}</span></label>`).join('')}</div>`).join('')+
+  (!hasS?`<p class="hint" style="margin-top:10px">Take supplements? Add them once under "About me" on the Morning tab, and a one-tap supplement question appears here.</p>`:'')+
+  `<p style="margin-top:12px">${yd&&yd.fuel?`<button class="btn ghost" type="button" data-fsame>Same as the day before</button>`:''}</p>`;
+}
+function renderNight(){
+ const k=nKey(),d=S.days[k]||{},n=d.night||{};
+ setRadio('nlight',d.light);setRadio('nenergy',n.energy);setRadio('nmood',n.mood);setRadio('npain',n.pain);setRadio('nspeech',n.speech);setRadio('nswallow',n.swallow);
+ $$('#nacts [data-act]').forEach(i=>{i.checked=(d.did||[]).includes(i.dataset.act)});$('#nnote').value=d.notes||'';
+ $$('input[name=nred]').forEach(i=>{i.checked=(n.red||[]).includes(i.value)});
+ renderFuel($('#fuel-pm'));renderReview();
+}
+function renderReview(){
+ const k=nKey(),d=S.days[k],el=$('#review');
+ const em=emergencyHTML(((d&&d.night&&d.night.red)||[]));if(em){el.innerHTML=em;return}
+ const Cn=circadian(S.days,k,{wake:null}),nowM=new Date().getHours()*60+new Date().getMinutes();
+ const tonight=k===today()?`<div class="clock"><h3>Tonight's clock</h3><div class="crow"><b>Dim lights</b><span>${fmtMin(Cn.dim)}<small>${nowM>=Cn.dim%1440&&nowM<Cn.lightsOut%1440+(Cn.lightsOut>=1440?1440:0)?'Now: lamps instead of overhead lights, screens dimmed.':'Lamps instead of overhead lights; this helps sleepiness arrive on time.'}</small></span></div><div class="crow"><b>Screens away</b><span>${fmtMin(Cn.screens)}<small>An audiobook or radio is fine.</small></span></div><div class="crow"><b>Lights out</b><span>${fmtMin(Cn.lightsOut)}<small>About 8 hours before your ${fmtMin(Cn.usual)} wake-up.</small></span></div><div class="crow"><b>Tomorrow</b><span>sunrise ${fmtMin(Cn.nextRise)}<small>${d&&d.light>=2?'Daylight came late today, so make tomorrow\'s the first thing you do.':'Get daylight within an hour of waking.'}</small></span></div></div>`:'';
+ const films=tonight+`<div class="ch" style="margin-top:16px"><h3>Three films for tonight</h3><p class="sum">One all-time great, one about science, one to think about. New picks every day.</p><ul class="movies">${moviesFor(k).map(m=>`<li><span class="yr">${m[2]}</span><span><b>${esc(m[1])}</b><small>${esc(m[3])} · ${m[0]==='G'?'all-time great':m[0]==='S'?'science':'philosophical'}</small><p>${esc(m[4])}</p></span></li>`).join('')}</ul></div>`;
+ if(!d||!logged(d)){el.innerHTML=`<div class="empty"><h3>Tap through the log on the left</h3><p>It takes about two minutes and saves as you go. Tomorrow morning, this is what the Morning tab reads back to you.</p></div>`+films;return}
+ const a=agg(d,S.profile),isToday=k===today();
+ let h=`<h2>${isToday?'Today':esc(fmtDateY(k))} in review</h2><div class="snap">${ring(a.dayScore,'Day score')}${ring(sleepScore(a),'Sleep',a.sleep!=null?a.sleep+' h':'not logged')}${ring(a.mito,'Energy support')}${ring(a.myelin,'Nerve support')}</div><p class="hint" style="text-align:center">${a.fuelScore==null?'Answer at least three food and drink questions to fill in the support scores.':'Support scores are checklist scores scaled by last night\'s sleep, not lab measures.'}</p>`;
+ const tips=tomorrowTips(S.days,k,S.profile);
+ if(tips.length)h+=`<div class="head" style="border-color:var(--s1)"><b>For tomorrow morning</b>${tips.map(x=>`<p>${esc(x)}</p>`).join('')}</div>`;
+ h+=films;
+ if(isToday)h+=`<div class="notes"><b>Tonight</b><p>Water by the bed. Evening medicines as prescribed. Screens away 30 minutes before lights out.</p><p>${d.puzzle?`Puzzle done today: ${pct(d.puzzle.score)}.`:'No puzzle today. That\'s fine; tomorrow brings a new one.'}</p></div>`;
+ el.innerHTML=h;
+}
+function nightSave(msg){const k=nKey();$('#nsaved').textContent='Saving…';persist(k).then(ok=>{$('#nsaved').textContent=ok?`Saved ${fmtTime(new Date())}`:'Not saved'});storeMsg(S.mode);renderReview()}
+$('#nf').addEventListener('change',e=>{const k=nKey(),d=day(k),t=e.target;
+ if(t.dataset.act){const set=new Set(d.did);t.checked?set.add(t.dataset.act):set.delete(t.dataset.act);d.did=[...set]}
+ else if(t.dataset.fk){d.fuel=Object.assign({},d.fuel,{[t.dataset.fk]:+t.value})}
+ else if(t.id==='nnote'){d.notes=t.value.slice(0,2000)}
+ else if(t.name==='nlight'){d.light=+t.value}
+ else if(t.name&&/^n(energy|mood|pain|speech|swallow|red)$/.test(t.name)){const n=Object.assign({t:new Date().toISOString()},d.night);const f=t.name.slice(1);if(f==='red')n.red=$$('input[name=nred]:checked').map(i=>i.value);else n[f]=+t.value;d.night=n}
+ else return;nightSave()});
+$('#nf').addEventListener('click',e=>{if(!e.target.matches('[data-fsame]'))return;const k=nKey(),yd=S.days[addDays(k,-1)];if(!yd||!yd.fuel)return;day(k).fuel=Object.assign({},yd.fuel);renderFuel($('#fuel-pm'));nightSave();$('#nsaved').textContent='Copied from the day before. Change anything that differed.'});
+$('#ndate').value=today();$('#ndate').max=today();
+$('#ndate').addEventListener('change',renderNight);$('#ntoday').addEventListener('click',()=>{$('#ndate').value=today();renderNight()});$('#nyday').addEventListener('click',()=>{$('#ndate').value=addDays(today(),-1);renderNight()});
+
+// ---------- PUZZLE ----------
+let G=null;
+const SHAPE=(shape,color)=>{const c=color==='blue'?'var(--s1)':'#eb6834';return`<svg viewBox="0 0 120 120" role="img" aria-label="${color} ${shape}">${shape==='circle'?`<circle cx="60" cy="60" r="46" fill="${c}"/>`:`<rect x="16" y="16" width="88" height="88" rx="8" fill="${c}"/>`}</svg>`};
+function renderPuzzleHome(){
+ const k=today(),T=puzzleType(k),D=S.days,d=D[k],pd=d&&d.puzzle,L=levelFor(T.k,D,k),st=$('#stage');
+ const lastE=(()=>{const c=(d&&d.checkins)||[];return c.length?c[c.length-1].energy:null})();
+ const low=lastE!=null&&lastE<=2;
+ st.innerHTML=`<h2>${esc(T.name)}</h2><p class="lead">${esc(fmtDateY(k))} · ${esc(T.skill)} · level ${L} of 5 · about ${T.mins} minutes</p><p>${esc(T.how)}</p>`+
+ (pd?`<div class="card"><b>Done today: ${pct(pd.score)} at level ${pd.level}${pd.short?' (short version)':''}</b><p>Come back tomorrow for a new puzzle. You can replay today's for practice; replays aren't saved.</p></div>`:'')+
+ (low&&!pd?`<div class="card warn"><b>Energy is low this morning</b><p>Thinking takes energy too. The short version is half as long, and skipping on a crash day is part of pacing.</p></div>`:'')+
+ `<p style="margin-top:18px;display:flex;flex-wrap:wrap;gap:10px">${pd?`<button class="btn ghost" type="button" data-pz="practice">Replay for practice</button>`:`<button class="btn" type="button" data-pz="full">Start</button><button class="btn ghost" type="button" data-pz="short">Short version</button>`}</p>`;
+ renderPzHist();
+}
+function renderPzHist(){const A=Object.values(currentDays()).filter(d=>d.puzzle).sort((a,b)=>a.date<b.date?1:-1).slice(0,8);
+ $('#pzhist').innerHTML=A.length?`<table><tbody>${A.map(d=>`<tr><td>${esc(fmtDate(d.date))}</td><td>${esc((PZ.find(x=>x.k===d.puzzle.type)||{}).name||'')}</td><td class="n">level ${d.puzzle.level}</td><td class="n"><b>${pct(d.puzzle.score)}</b></td></tr>`).join('')}</tbody></table>`:'<p class="hint">Your scores show up here. Each puzzle type adapts on its own: score 85% or more and it gets a step harder; under 60% and it eases off.</p>'}
+$('#stage').addEventListener('click',e=>{const b=e.target.closest('[data-pz]');if(!b)return;const mode=b.dataset.pz;
+ if(mode==='home'){renderPuzzleHome();return}
+ const k=today(),T=puzzleType(k),L=levelFor(T.k,S.days,k);
+ G={T,mode,P:genPuzzle(T.k,k+(mode==='practice'?':p'+Date.now():''),L,mode==='short'),i:0,ok:0,tot:0,ms:[],t0:0};startPuzzle()});
+function finishPuzzle(score,detail){
+ const k=today(),official=G.mode!=='practice';score=Math.max(0,Math.min(1,score));
+ if(official){day(k).puzzle={type:G.T.k,level:G.P.level,score,detail,short:G.mode==='short',t:new Date().toISOString()};persist(k,true);storeMsg(S.mode)}
+ const prev=Object.values(S.days).filter(d=>d.date<k&&d.puzzle&&d.puzzle.type===G.T.k).sort((a,b)=>a.date<b.date?1:-1)[0];
+ const nextL=Math.max(1,Math.min(5,score>=0.85?G.P.level+1:score<0.6?G.P.level-1:G.P.level));
+ $('#stage').innerHTML=`<h2>${esc(G.T.name)}: done</h2><p class="result">${pct(score)}</p><p>${esc(detail)}</p>${prev?`<p>Last time on this puzzle: ${pct(prev.puzzle.score)} at level ${prev.puzzle.level}.</p>`:''}<p>${official?`Next time this puzzle comes around it will be at level ${nextL}.`:'Practice round, not saved.'} ${score>=0.85?'Nicely done.':score<0.6?'Hard ones are where the training happens.':'Steady work.'}</p><p style="margin-top:16px"><button class="btn ghost" type="button" data-pz="home">Back</button> <a class="btn ghost" href="#am" style="display:inline-flex;align-items:center;text-decoration:none">Back to my morning</a></p>`;
+ renderPzHist();if(location.hash==='#am')renderPlan();
+}
+const progress=(i,n)=>`<div class="prog" aria-hidden="true"><i style="width:${Math.round(i/n*100)}%"></i></div>`;
+function startPuzzle(){const t=G.T.k;({compare:pzCompare,search:pzSearch,switch:pzSwitch,pattern:pzPattern,words:pzWords})[t]()}
+function pzCompare(){const it=G.P.items,i=G.i;if(i>=it.length){const avgS=avg(G.ms)/1000;finishPuzzle(G.ok/it.length,`${G.ok} of ${it.length} correct · ${avgS.toFixed(1)} seconds per pair on average.`);return}
+ const x=it[i],grid=A=>`<div class="pg" style="grid-template-columns:repeat(${x.sz},auto)">${A.map(v=>`<i class="${v?'on':''}"></i>`).join('')}</div>`;
+ $('#stage').innerHTML=`<h2>Same or different?</h2>${progress(i,it.length)}<div class="pair">${grid(x.A)}${grid(x.B)}</div><p class="fb" id="fb"></p><div class="big2"><button type="button" data-a="1">Same</button><button type="button" data-a="0">Different</button></div>`;
+ G.t0=performance.now();$$('#stage [data-a]').forEach(b=>b.onclick=()=>{G.ms.push(performance.now()-G.t0);const right=(b.dataset.a==='1')===x.same;if(right)G.ok++;$('#fb').textContent=right?'Right':'Not quite: '+(x.same?'they matched':'one square differed');$('#fb').className='fb '+(right?'ok':'no');$$('#stage [data-a]').forEach(z=>z.disabled=true);G.i++;setTimeout(pzCompare,right?350:1100)})}
+function pzSearch(){const R=G.P.rounds,i=G.i;if(i>=R.length){finishPuzzle(G.ok/G.tot,`Found ${G.hits} of ${G.tot} up-arrows${G.fa?`, with ${G.fa} extra tap${G.fa>1?'s':''}`:''}.`);return}
+ if(i===0){G.hits=0;G.fa=0;G.tot=0;G.ok=0}const x=R[i],mk=new Set();
+ $('#stage').innerHTML=`<h2>Tap every ▲</h2>${progress(i,R.length)}<p class="lead">Round ${i+1} of ${R.length}. Tap again to unmark. No timer.</p><div class="sgrid" style="grid-template-columns:repeat(${x.n},minmax(0,1fr))">${x.cells.map((c,j)=>`<button type="button" data-c="${j}" aria-label="${c==='▲'?'up arrow':'arrow'} ${j+1}">${c}</button>`).join('')}</div><button class="btn" type="button" id="sdone">Done</button>`;
+ $$('#stage [data-c]').forEach(b=>b.onclick=()=>{const j=+b.dataset.c;mk.has(j)?mk.delete(j):mk.add(j);b.classList.toggle('mk')});
+ $('#sdone').onclick=()=>{let h=0,fa=0;$$('#stage [data-c]').forEach(b=>{const j=+b.dataset.c,t=x.cells[j]==='▲';b.disabled=true;if(mk.has(j)&&t){h++;b.classList.add('hit')}else if(mk.has(j)){fa++;b.classList.add('fa')}else if(t)b.classList.add('miss')});
+  G.hits+=h;G.fa+=fa;G.tot+=x.targets;G.ok+=Math.max(0,h-fa);$('#sdone').textContent='Next';$('#sdone').onclick=()=>{G.i++;pzSearch()}}}
+function pzSwitch(){const it=G.P.items,i=G.i;if(i>=it.length){finishPuzzle(G.ok/it.length,`${G.ok} of ${it.length} correct · ${(avg(G.ms)/1000).toFixed(1)} seconds per answer on average.`);return}
+ const x=it[i],opts=x.rule==='shape'?[['circle','Circle'],['square','Square']]:[['blue','Blue'],['orange','Orange']];
+ $('#stage').innerHTML=`<h2>Shape or color?</h2>${progress(i,it.length)}<div class="stim"><span class="cue">${x.rule==='shape'?'SHAPE':'COLOR'}</span>${SHAPE(x.shape,x.color)}</div><p class="fb" id="fb"></p><div class="big2">${opts.map(([v,l])=>`<button type="button" data-a="${v}">${l}</button>`).join('')}</div>`;
+ G.t0=performance.now();$$('#stage [data-a]').forEach(b=>b.onclick=()=>{G.ms.push(performance.now()-G.t0);const want=x.rule==='shape'?x.shape:x.color,right=b.dataset.a===want;if(right)G.ok++;$('#fb').textContent=right?'Right':`The rule was ${x.rule}: ${want}`;$('#fb').className='fb '+(right?'ok':'no');$$('#stage [data-a]').forEach(z=>z.disabled=true);G.i++;setTimeout(pzSwitch,right?350:1200)})}
+function pzPattern(){const R=G.P.rounds,i=G.i;if(i>=R.length){finishPuzzle(G.ok/G.tot,`${G.okc} of ${G.tot} squares remembered${G.fa?`, ${G.fa} wrong tap${G.fa>1?'s':''}`:''}.`);return}
+ if(i===0){G.ok=0;G.tot=0;G.okc=0;G.fa=0}const x=R[i],lit=new Set(x.lit),mk=new Set();
+ const draw=show=>`<div class="sgrid" style="grid-template-columns:repeat(${x.n},minmax(0,1fr));max-width:380px">${Array.from({length:x.n*x.n},(_,j)=>`<button type="button" data-c="${j}" class="${show&&lit.has(j)?'lit':''}" ${show?'disabled':''} aria-label="square ${j+1}"></button>`).join('')}</div>`;
+ $('#stage').innerHTML=`<h2>Remember the squares</h2>${progress(i,R.length)}<p class="lead">Round ${i+1} of ${R.length}: watch the ${x.lit.length} lit squares.</p>${draw(true)}`;
+ setTimeout(()=>{$('#stage').innerHTML=`<h2>Remember the squares</h2>${progress(i,R.length)}<p class="lead">Now tap the ${x.lit.length} squares that were lit.</p>${draw(false)}<button class="btn" type="button" id="pdone">Check</button>`;
+  $$('#stage [data-c]').forEach(b=>b.onclick=()=>{const j=+b.dataset.c;mk.has(j)?mk.delete(j):mk.add(j);b.classList.toggle('mk')});
+  $('#pdone').onclick=()=>{let h=0,fa=0;$$('#stage [data-c]').forEach(b=>{const j=+b.dataset.c;b.disabled=true;if(mk.has(j)&&lit.has(j)){h++;b.classList.add('hit')}else if(mk.has(j)){fa++;b.classList.add('fa')}else if(lit.has(j))b.classList.add('miss')});
+   G.okc+=h;G.fa+=fa;G.tot+=x.lit.length;G.ok+=Math.max(0,h-fa);$('#pdone').textContent='Next';$('#pdone').onclick=()=>{G.i++;pzPattern()}}},G.P.showMs)}
+function pzWords(){const P=G.P;
+ $('#stage').innerHTML=`<h2>Word recall</h2><p class="lead">Read these ${P.study.length} words. Take as long as you like; picturing each one helps.</p><div class="words">${P.study.map(w=>`<span>${esc(w)}</span>`).join('')}</div><button class="btn" type="button" id="wready">I've got them</button>`;
+ $('#wready').onclick=()=>{let j=0;const num=()=>{if(j>=P.nums.length){pick();return}const [a,b]=P.nums[j];$('#stage').innerHTML=`<h2>Quick: tap the bigger number</h2>${progress(j,P.nums.length)}<div class="big2" style="margin-top:20px"><button type="button" data-n="${a}">${a}</button><button type="button" data-n="${b}">${b}</button></div>`;$$('#stage [data-n]').forEach(x=>x.onclick=()=>{j++;num()})};num()};
+ const pick=()=>{$('#stage').innerHTML=`<h2>Which words did you see?</h2><p class="lead">Tap all the words from the list. ${P.study.length} of these are right.</p><div class="wpick">${P.choices.map((w,i)=>`<label><input type="checkbox" value="${esc(w)}"> ${esc(w)}</label>`).join('')}</div><button class="btn" type="button" id="wdone">Check</button>`;
+  $('#wdone').onclick=()=>{const sel=$$('#stage .wpick input:checked').map(i=>i.value),h=sel.filter(w=>P.study.includes(w)).length,fa=sel.length-h;finishPuzzle((h-fa)/P.study.length,`${h} of ${P.study.length} words remembered${fa?`, ${fa} extra pick${fa>1?'s':''}`:''}. The words were: ${P.study.join(', ')}.`)}}}
+
+// ---------- range ----------
+const R={from:null,to:null};
+function currentDays(){return S.sample||S.days}
+const loggedKeys=()=>Object.keys(currentDays()).filter(k=>logged(currentDays()[k])).sort();
+function rangeUI(id){
+ $('#'+id).innerHTML=`<div class="fld"><label for="${id}-f">From</label><input type="date" id="${id}-f"></div><div class="fld"><label for="${id}-t">To</label><input type="date" id="${id}-t"></div>${[['7','Last 7 days'],['30','Last 30 days'],['90','Last 90 days'],['all','Everything']].map(([v,l])=>`<button class="btn ghost" type="button" data-r="${v}">${l}</button>`).join('')}`;
+ $('#'+id).addEventListener('click',e=>{const v=e.target.dataset.r;if(!v)return;const L=loggedKeys(),t=S.sample?L[L.length-1]:today();R.to=t;R.from=v==='all'?(L[0]||t):addDays(t,-(+v-1));syncRange();refreshRange()});
+ $('#'+id).addEventListener('change',e=>{if(e.target.type!=='date')return;R[e.target.id.endsWith('-f')?'from':'to']=e.target.value;if(R.from&&R.to&&R.from>R.to)[R.from,R.to]=[R.to,R.from];syncRange();refreshRange()});
+}
+function syncRange(){['range1','range2'].forEach(id=>{$('#'+id+'-f').value=R.from||'';$('#'+id+'-t').value=R.to||''})}
+function inRange(){const D=currentDays();return Object.keys(D).filter(k=>k>=R.from&&k<=R.to).sort().map(k=>D[k]).filter(d=>logged(d)||d.notes)}
+function defaultRange(){const L=loggedKeys();R.to=today();R.from=L.length?(L[0]>addDays(today(),-29)?L[0]:addDays(today(),-29)):addDays(today(),-6)}
+
+// ---------- charts ----------
+function lineSVG(pts,W,H,o){
+ const m={l:o.fmt?52:34,r:10,t:10,b:24},w=W-m.l-m.r,h=H-m.t-m.b,n=pts.length;
+ const x=i=>m.l+(n<=1?w/2:w*i/(n-1)),y=v=>m.t+h*(1-(v-o.min)/(o.max-o.min));
+ let g='';o.ticks.forEach(t=>{g+=`<line x1="${m.l}" x2="${W-m.r}" y1="${y(t)}" y2="${y(t)}" stroke="var(--line)"/><text x="${m.l-6}" y="${y(t)+4}" text-anchor="end" font-size="12" fill="var(--mute)">${o.fmt?o.fmt(t).replace(':00',''):t}</text>`});
+ const step=Math.max(1,Math.ceil(n/(W<520?4:7)));
+ pts.forEach((p,i)=>{if((i%step===0&&(n-1-i)*w/Math.max(1,n-1)>56)||i===n-1)g+=`<text x="${x(i)}" y="${H-6}" text-anchor="${i===0?'start':i===n-1?'end':'middle'}" font-size="12" fill="var(--mute)">${esc(fmtDate(p.date))}</text>`});
+ let body='';
+ if(o.bars){const bw=Math.max(3,Math.min(22,w/n-3));pts.forEach((p,i)=>{if(p.v==null)return;const yy=y(p.v),x0=Math.max(m.l,Math.min(W-m.r-bw,x(i)-bw/2));body+=`<path d="M${x0},${y(o.min)}V${yy+3}q0,-3 3,-3h${bw-6}q3,0 3,3V${y(o.min)}Z" fill="var(--s1)"/>`})}
+ else{let d='',on=false;pts.forEach((p,i)=>{if(p.v==null){on=false;return}d+=(on?'L':'M')+x(i)+','+y(p.v);on=true});body+=`<path d="${d}" fill="none" stroke="var(--s1)" stroke-width="2" stroke-linejoin="round"/>`;
+  if(n<=45)pts.forEach((p,i)=>{if(p.v!=null)body+=`<circle cx="${x(i)}" cy="${y(p.v)}" r="4" fill="var(--s1)" stroke="var(--bg)" stroke-width="2"/>`})}
+ if(o.ref!=null)body+=`<line x1="${m.l}" x2="${W-m.r}" y1="${y(o.ref)}" y2="${y(o.ref)}" stroke="var(--ink)" stroke-dasharray="4 4" opacity=".6"/>`;
+ return`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(o.aria)}">${g}${body}<line class="xh" x1="0" x2="0" y1="${m.t}" y2="${H-m.b}" stroke="var(--ink)" opacity="0" /></svg>`;
+}
+function stripSVG(rows,dates,W,H){
+ const m={l:96,r:10,t:4,b:22},w=W-m.l-m.r,rh=(H-m.t-m.b)/rows.length,n=dates.length,cw=w/n;
+ let g='';rows.forEach((r,ri)=>{g+=`<text x="${m.l-8}" y="${m.t+ri*rh+rh/2+4}" text-anchor="end" font-size="12" fill="var(--mute)">${esc(r.label)}</text>`;
+  r.vals.forEach((v,i)=>{g+=`<rect x="${m.l+i*cw+1}" y="${m.t+ri*rh+1}" width="${Math.max(1,cw-2)}" height="${rh-2}" rx="3" fill="${v==null?'var(--card)':['var(--q1)','var(--q2)','var(--q3)'][v]}"/>`})});
+ const step=Math.max(1,Math.ceil(n/(W<520?4:7)));dates.forEach((d,i)=>{if((i%step===0&&(n-1-i)*cw>56)||i===n-1)g+=`<text x="${m.l+i*cw+cw/2}" y="${H-6}" text-anchor="middle" font-size="12" fill="var(--mute)">${esc(fmtDate(d))}</text>`});
+ return`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Speech and swallowing by day, darker is harder">${g}</svg>`;
+}
+function series(days){if(!days.length)return[];const out=[],by=Object.fromEntries(days.map(d=>[d.date,agg(d,S.profile)]));
+ for(let k=days[0].date;k<=days[days.length-1].date;k=addDays(k,1))out.push(by[k]||{date:k,energy:null,amEnergy:null,mood:null,pain:null,sleep:null,speech:null,swallow:null,did:[],puzzle:null});return out}
+const CH=[];
+function drawCharts(){CH.forEach(c=>{const el=c.el;if(!el||!el.isConnected)return;const W=Math.max(280,el.clientWidth||600),H=el.clientHeight||200;el.innerHTML=c.kind==='strip'?stripSVG(c.rows,c.dates,W,H):lineSVG(c.pts,W,H,c.o)})}
+const ro=window.ResizeObserver?new ResizeObserver(()=>drawCharts()):null;
+function chartBox(title,sum,kind,data,short){const id='c'+CH.length;CH.push(Object.assign({id,kind},data));return`<div class="ch"><h3>${esc(title)}</h3><p class="sum">${esc(sum)}</p><div class="fig${short?' short':''}" id="${id}" data-c="${CH.length-1}"></div></div>`}
+const f1=v=>v==null?'–':(Math.round(v*10)/10).toString();
+function glanceHTML(days){
+ const last=days[days.length-1].date,ks=Array.from({length:7},(_,i)=>addDays(last,i-6)),D=currentDays(),A=ks.map(k=>D[k]?agg(D[k],S.profile):{date:k});
+ const sleepCol=h=>h==null?'var(--card)':h>=7?'var(--q3)':h>=6?'var(--q2)':'var(--q1)';
+ const bar=v=>`<div title="${pct(v)}"><div class="mini"><i style="width:${v==null?0:Math.round(v*100)}%"></i></div><small>${pct(v)}</small></div>`;
+ return`<div class="ch" style="margin-bottom:18px"><h3>Last 7 days at a glance</h3><p class="sum">Day score = how you felt (half) plus sleep and fuel (a quarter each). Support scores are checklist scores, not lab measures.</p><div class="glance">
+ <span></span>${A.map(a=>`<span class="dl">${esc(parseKey(a.date).toLocaleDateString('en-US',{weekday:'short'}))}<br>${esc(fmtDate(a.date))}</span>`).join('')}
+ <span class="rl">Day score</span>${A.map(a=>`<div class="ring" style="--v:${a.dayScore==null?0:Math.round(a.dayScore*100)}"><span>${pct(a.dayScore)}</span></div>`).join('')}
+ <span class="rl">Sleep (h)</span>${A.map(a=>`<div class="dot" style="background:${sleepCol(a.sleep)};color:${a.sleep!=null&&a.sleep>=7?'var(--bg)':'var(--ink)'}">${a.sleep==null?'–':a.sleep}</div>`).join('')}
+ <span class="rl">Energy support</span>${A.map(a=>bar(a.mito)).join('')}
+ <span class="rl">Nerve support</span>${A.map(a=>bar(a.myelin)).join('')}
+ <span class="rl">Puzzle</span>${A.map(a=>bar(a.puzzle?a.puzzle.score:null)).join('')}
+ </div></div>`;
+}
+function renderHistory(){
+ $('#hsample').innerHTML=S.sample?`<div class="sampleban">You're looking at made-up sample data. Nothing here is saved. <button class="btn ghost" type="button" id="unsample">Back to my history</button></div>`:'';
+ const days=inRange(),el=$('#hbody');CH.length=0;
+ if(!days.length){el.innerHTML=`<div class="empty"><h3>No entries in these dates yet</h3><p>Check in each morning and log each night, and the charts fill in here. Want to see what it will look like?</p><button class="btn ghost" type="button" id="dosample">Preview with sample data</button></div>`;return}
+ const ser=series(days),pts=k=>ser.map(a=>({date:a.date,v:a[k]})),A=days.map(d=>agg(d,S.profile));
+ const e=avg(A.filter(a=>a.amEnergy!=null).map(a=>a.amEnergy)),sl=avg(A.filter(a=>a.sleep!=null).map(a=>a.sleep)),hard=A.filter(isHard).length,pzA=A.filter(a=>a.puzzle);
+ let h=glanceHTML(days)+`<p style="margin:0 0 14px"><b>${days.length}</b> days logged from ${esc(fmtDateY(R.from))} to ${esc(fmtDateY(R.to))} · average waking energy <b>${f1(e)}</b>/10 · average sleep <b>${f1(sl)}</b> h · <b>${hard}</b> hard morning${hard===1?'':'s'} · puzzles done on <b>${pzA.length}</b> day${pzA.length===1?'':'s'}.</p><div class="charts">`;
+ h+=chartBox('Energy on waking (0–10)','Dashed line: energy 3 (low)','line',{pts:pts('amEnergy'),o:{min:0,max:10,ticks:[0,5,10],ref:3,aria:'Morning energy',unit:'/10'}});
+ h+=chartBox('Sleep (hours)','Dashed line: 7 hours','line',{pts:pts('sleep'),o:{min:0,max:12,ticks:[0,6,12],bars:true,ref:7,aria:'Hours of sleep each night',unit:' h'}});
+ h+=chartBox('Mood (0 very low – 4 very good)','Average of morning and night entries','line',{pts:pts('mood'),o:{min:0,max:4,ticks:[0,2,4],aria:'Daily average mood',unit:'',lab:MOOD}});
+ h+=chartBox('Wake time','Each morning\'s wake-up; flatter is better (regular timing)','line',{pts:ser.map(a=>({date:a.date,v:a.wakeM})),o:{min:240,max:600,ticks:[300,420,540],fmt:fmtMin,aria:'Wake time each day',unit:''}});
+ h+=chartBox('Puzzle score (%)','One puzzle a day; the type rotates, so compare like with like in the table','line',{pts:ser.map(a=>({date:a.date,v:a.puzzle?Math.round(a.puzzle.score*100):null,ty:a.puzzle&&a.puzzle.type})),o:{min:0,max:100,ticks:[0,50,100],aria:'Daily puzzle score',unit:'%'}});
+ h+=`</div><div class="ch" style="margin-top:18px"><h3>Speech and swallowing</h3><p class="sum">Worst rating each day; darker means harder.</p><div class="fig short" id="cstrip" data-c="${CH.length}"></div><div class="legend"><span><i style="background:var(--q1)"></i>Clear / fine</span><span><i style="background:var(--q2)"></i>A bit slurred / careful</span><span><i style="background:var(--q3)"></i>Hard to understand / coughing</span><span><i style="background:var(--card);outline:1px solid var(--line)"></i>No entry</span></div></div>`;
+ CH.push({kind:'strip',rows:[{label:'Speech',vals:ser.map(a=>a.speech)},{label:'Swallowing',vals:ser.map(a=>a.swallow)}],dates:ser.map(a=>a.date)});
+ h+=`<div class="ch" style="margin-top:18px" id="corr"></div>`;
+ const pt=patterns(days);
+ h+=`<div class="ch" style="margin-top:18px"><h3>What came before hard mornings</h3>`;
+ if(!pt.ok)h+=`<p class="sum">Needs about 10 night logs followed by a morning check-in (you have ${pt.n}). Keep logging; this fills in by itself.</p>`;
+ else{h+=`<p class="sum">How often the next morning was hard (energy 3 or below on waking, under 6 hours of sleep, or unrefreshed) after each thing you logged. The black line is your overall rate, ${pct(pt.base)}. Only items logged 3+ times are shown. Patterns, not causes.</p>`;
+  h+=pt.rows.length?pt.rows.map(r=>`<div class="pbar"><span>${esc(r.name)} <small>(${r.n}×)</small></span><div class="tr"><div class="fl" style="width:${Math.round(r.rate*100)}%"></div><div class="base" style="left:${Math.round(pt.base*100)}%"></div></div><b>${pct(r.rate)}</b></div>`).join(''):'<p>Nothing logged 3+ times yet.</p>'}
+ h+=`</div><details><summary>Table view</summary><div class="scroll">${dayTable(days)}</div></details>`;
+ el.innerHTML=h;$$('#hbody .fig').forEach(f=>{const c=CH[+f.dataset.c];c.el=f;if(ro)ro.observe(f)});drawCharts();
+ CDAYS=days;renderCorr();
+}
+// ---------- correlations UI ----------
+let CDAYS=[],CM=null,CSEL=null;
+const CS={mode:'next',method:'spearman',detrend:false,hide:false,groups:['Sleep & clock','Morning','Evening','Food & drink','Daylight & puzzle']};
+const cfill=r=>{const a=Math.round(Math.min(1,Math.abs(r))*100);return`color-mix(in oklab, var(${r<0?'--neg':'--pos'}) ${a}%, var(--mid))`};
+const fmtVal=(f,v)=>f.time?fmtMin(v):f.opts&&Number.isInteger(v)&&f.opts[v]!=null?f.opts[v]:f.bin?(v?'yes':'no'):f.id==='puzzle'?Math.round(v*100)+'%':(Math.round(v*100)/100);
+function renderCorr(){
+ const box=$('#corr');if(!box)return;
+ CM=corrMatrix(CDAYS,CS);
+ const ctl=`<h3>How everything connects</h3><p class="sum">Every pair of measures you track, correlated across the dates above. Blue: they rise together. Red: one rises as the other falls. Tap any square for the numbers and a scatter plot.</p>
+ <div class="corrctl">
+ <div><p class="q" style="margin-top:0">Compare</p><div class="seg"><label><input type="radio" name="cmode" value="next" ${CS.mode==='next'?'checked':''}><span>Evening → next morning</span></label><label><input type="radio" name="cmode" value="same" ${CS.mode==='same'?'checked':''}><span>Same day</span></label></div></div>
+ <div><p class="q" style="margin-top:0">Method</p><div class="seg"><label><input type="radio" name="cmeth" value="spearman" ${CS.method==='spearman'?'checked':''}><span>Spearman (ranks)</span></label><label><input type="radio" name="cmeth" value="pearson" ${CS.method==='pearson'?'checked':''}><span>Pearson (linear)</span></label></div></div>
+ <div><p class="q" style="margin-top:0">Checks</p><div class="checks"><label class="chk"><input type="checkbox" name="cdet" ${CS.detrend?'checked':''}> Remove drift over time</label><label class="chk"><input type="checkbox" name="chide" ${CS.hide?'checked':''}> Hide likely chance</label></div></div>
+ <div style="flex-basis:100%"><p class="q" style="margin-top:0">Measures</p><div class="checks">${CGROUPS.map(g=>`<label class="chk"><input type="checkbox" name="cgrp" value="${esc(g)}" ${CS.groups.includes(g)?'checked':''}> ${esc(g)}</label>`).join('')}</div></div></div>`;
+ const {rows,cols,pairs,tested,min}=CM;
+ if(!rows.length||!cols.length){box.innerHTML=ctl+`<p class="sum">${CS.mode==='next'?'Pick at least one morning group (Sleep & clock or Morning) and one evening group to compare.':'Pick at least two groups of measures.'}</p>`;return}
+ if(!tested){box.innerHTML=ctl+`<div class="empty"><b>Not enough paired days yet</b><p>Each pair needs at least ${min} days where both were logged${CS.mode==='next'?' (an evening followed by the next morning)':''}. Keep logging; this fills in by itself.</p></div>`;return}
+ box.innerHTML=ctl+`<div class="corrfig" id="cfig"></div><div class="corrleg"><span>−1</span><span class="grad"></span><span>+1</span><span>● holds up after correcting for ${tested} comparisons</span><span>faded: could be chance</span><span>blank: fewer than ${min} paired days or no variation</span></div><div id="cdet"></div><div id="ctop"></div>`;
+ drawCorr();renderTop();
+ if(CSEL){const c=pairs.find(p=>p.a.id===CSEL[0]&&p.b.id===CSEL[1]);if(c&&c.r!=null&&c.n>=min)renderDetail(c);else CSEL=null}
+}
+function drawCorr(){
+ const fig=$('#cfig');if(!fig)return;const {rows,cols,pairs,min}=CM;
+ const avail=Math.max(300,fig.clientWidth||700),lw=Math.min(230,Math.max(...rows.map(r=>r.l.length))*6.8+16),ncol=CS.mode==='same'?cols.length-1:cols.length,nrow=CS.mode==='same'?rows.length-1:rows.length;
+ const cs=Math.max(24,Math.min(44,Math.floor((avail-lw-120)/Math.max(1,ncol)))),th=140,W=lw+ncol*cs+120,H=th+nrow*cs+4;
+ const colList=CS.mode==='same'?cols.slice(0,-1):cols,rowList=CS.mode==='same'?rows.slice(1):rows;
+ let g='';
+ colList.forEach((c,j)=>{const x=lw+j*cs+cs/2;g+=`<text transform="translate(${x+4},${th-6}) rotate(-50)" font-size="12" fill="var(--mute)">${esc(c.l)}</text>`});
+ rowList.forEach((r,i)=>{const y=th+i*cs+cs/2+4;g+=`<text x="${lw-8}" y="${y}" font-size="12" text-anchor="end" fill="var(--ink)">${esc(r.l)}</text>`});
+ rowList.forEach((r,i)=>colList.forEach((c,j)=>{
+  const ri=CS.mode==='same'?i+1:i,cj=j;const p=pairs.find(z=>z.i===ri&&z.j===cj);const x=lw+j*cs,y=th+i*cs;
+  if(!p){return}
+  const ok=p.r!=null&&p.n>=min,sig=ok&&p.q<0.05,tent=ok&&p.q<0.10;
+  if(!ok){g+=`<rect x="${x+1}" y="${y+1}" width="${cs-2}" height="${cs-2}" rx="4" fill="none" stroke="var(--line)" stroke-dasharray="2 3"/>`;return}
+  if(CS.hide&&!tent){g+=`<rect x="${x+1}" y="${y+1}" width="${cs-2}" height="${cs-2}" rx="4" fill="var(--mid)" opacity=".5"/>`;return}
+  const lab=`${p.a.l} and ${p.b.l}: r ${p.r.toFixed(2)}, ${p.n} days${sig?', holds up':tent?', tentative':', could be chance'}`;
+  g+=`<g class="cell" tabindex="0" role="button" aria-label="${esc(lab)}" data-a="${p.a.id}" data-b="${p.b.id}"><rect class="bg" x="${x+1}" y="${y+1}" width="${cs-2}" height="${cs-2}" rx="4" fill="${cfill(p.r)}" fill-opacity="${tent?1:0.38}"/>${sig?`<circle cx="${x+cs/2}" cy="${y+cs/2}" r="${Math.max(3,cs/9)}" fill="${Math.abs(p.r)>0.45?'#fff':'var(--ink)'}"/>`:tent&&cs>=34?`<text x="${x+cs/2}" y="${y+cs/2+4}" font-size="11" text-anchor="middle" fill="var(--ink)">${p.r.toFixed(1).replace('0.','.')}</text>`:''}<title>${esc(lab)}</title></g>`;
+ }));
+ fig.innerHTML=`<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="group" aria-label="Correlation heat map">${g}</svg>`;
+}
+function renderTop(){
+ const {pairs,tested,min}=CM,ok=pairs.filter(p=>p.r!=null&&p.n>=min);
+ const strong=ok.filter(p=>p.q<0.10).sort((a,b)=>a.q-b.q||Math.abs(b.r)-Math.abs(a.r)).slice(0,8);
+ const best=ok.slice().sort((a,b)=>Math.abs(b.r)-Math.abs(a.r)).slice(0,5);
+ const row=p=>`<button type="button" data-a="${p.a.id}" data-b="${p.b.id}"><span class="rv" style="color:${p.r<0?'var(--neg)':'var(--pos)'}">${p.r>0?'+':''}${p.r.toFixed(2)}</span><span>${esc(p.a.l)} ${CS.mode==='next'?'→':'↔'} ${esc(p.b.l.toLowerCase())}${CS.mode==='next'?' next morning':''}</span><small class="mute">${p.n} days · q ${p.q<0.001?'<0.001':p.q.toFixed(3)}</small></button>`;
+ $('#ctop').innerHTML=`<div class="toplist"><p class="q">${strong.length?`Relationships that hold up (${strong.length} of ${tested} tested)`:`Nothing holds up yet out of ${tested} pairs tested`}</p>${strong.length?strong.map(row).join(''):`<p class="sum">That's normal with only a few weeks of data. The strongest so far, unconfirmed:</p>${best.map(row).join('')}`}</div>`;
+}
+function renderDetail(c){
+ CSEL=[c.a.id,c.b.id];const m=CM.tested,v=corrVerdict(c,m),meth=CS.method==='spearman'?'Spearman ρ':'Pearson r';
+ $('#cdet').innerHTML=`<div class="corrdet"><div><p class="q" style="margin-top:0">${esc(c.a.l)} ${CS.mode==='next'?'→':'↔'} ${esc(c.b.l)}${CS.mode==='next'?' (next morning)':''}</p><div class="big" style="color:${c.r<0?'var(--neg)':'var(--pos)'}">${c.r>0?'+':''}${c.r.toFixed(2)}</div>
+ <p>${esc(corrSentence(c,CS.mode))}</p><p class="stat">${meth} = ${c.r.toFixed(3)} · 95% CI ${c.lo.toFixed(2)} to ${c.hi.toFixed(2)} · n = ${c.n} days · p = ${c.p<0.001?'<0.001':c.p.toFixed(3)} · q = ${c.q<0.001?'<0.001':c.q.toFixed(3)}${CS.detrend?' · drift over time removed':''}</p>
+ <div class="verd ${v.k}">${esc(v.t)}</div>
+ <p class="hint">Correlation shows what tends to happen together, not what causes what. ${CS.mode==='next'?'Evening-to-morning order rules out the morning causing the evening, but something else (a flare, the weather) could drive both.':'Same-day links can run in either direction.'} The 95% interval is the plausible range for this one pair: ${c.lo<0&&c.hi>0?'it includes zero, so no link at all is still plausible.':'it excludes zero, but it does not account for the many pairs tested, which is what the q value is for.'}</p></div>
+ <div><div class="sc" id="csc"></div><p class="hint" style="margin-top:6px">Each dot is one ${CS.mode==='next'?'evening and the morning after':'day'}; dots are nudged sideways so overlaps show. ${c.a.bin||new Set(c.X.filter(v=>v!=null)).size<=6?'Bars mark the average for each value.':'The line is the straight-line trend.'}</p></div></div>`;
+ drawScatter(c);
+}
+function drawScatter(c){
+ const el=$('#csc');if(!el)return;const W=Math.max(260,el.clientWidth||400),H=el.clientHeight||240,m={l:46,r:12,t:10,b:42};
+ const P=[];c.X.forEach((x,i)=>{const y=c.Y[i];if(x!=null&&y!=null)P.push([x,y,c.keys[i]])});
+ const xs=P.map(p=>p[0]),ys=P.map(p=>p[1]),xmin=Math.min(...xs),xmax=Math.max(...xs),ymin=Math.min(...ys),ymax=Math.max(...ys);
+ const padx=(xmax-xmin||1)*0.08,pady=(ymax-ymin||1)*0.08,X=v=>m.l+(v-xmin+padx)/((xmax-xmin)+2*padx)*(W-m.l-m.r),Y=v=>H-m.b-(v-ymin+pady)/((ymax-ymin)+2*pady)*(H-m.t-m.b);
+ const ux=[...new Set(xs)].sort((a,b)=>a-b),disc=ux.length<=6,step=disc&&ux.length>1?(X(ux[1])-X(ux[0])):30;
+ let g='';
+ const tick=(f,v)=>esc(String(fmtVal(f,v)));
+ (disc?ux:[xmin,(xmin+xmax)/2,xmax]).forEach(v=>{g+=`<text x="${X(v)}" y="${H-m.b+16}" font-size="12" text-anchor="middle" fill="var(--mute)">${tick(c.a,v)}</text>`});
+ [ymin,ymax].forEach(v=>{g+=`<line x1="${m.l}" x2="${W-m.r}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)"/><text x="${m.l-6}" y="${Y(v)+4}" font-size="12" text-anchor="end" fill="var(--mute)">${tick(c.b,v)}</text>`});
+ g+=`<text x="${(m.l+W-m.r)/2}" y="${H-6}" font-size="12" text-anchor="middle" fill="var(--ink)">${esc(c.a.l)}</text><text transform="translate(12,${(m.t+H-m.b)/2}) rotate(-90)" font-size="12" text-anchor="middle" fill="var(--ink)">${esc(c.b.l)}${CS.mode==='next'?' (next a.m.)':''}</text>`;
+ P.forEach((p,i)=>{const jx=disc?((((i*37)%17)/16)-0.5)*Math.min(26,step*0.45):0,jy=new Set(ys).size<=11?((((i*53)%13)/12)-0.5)*6:0;g+=`<circle cx="${X(p[0])+jx}" cy="${Y(p[1])+jy}" r="4.5" fill="${c.r<0?'var(--neg)':'var(--pos)'}" fill-opacity=".55" stroke="var(--bg)" stroke-width="1"><title>${esc(fmtDate(p[2]))}: ${tick(c.a,p[0])}, ${tick(c.b,p[1])}</title></circle>`});
+ if(disc){ux.forEach(v=>{const yy=P.filter(p=>p[0]===v).map(p=>p[1]);if(!yy.length)return;const mu=avg(yy);g+=`<line x1="${X(v)-Math.min(22,step*0.35)}" x2="${X(v)+Math.min(22,step*0.35)}" y1="${Y(mu)}" y2="${Y(mu)}" stroke="var(--ink)" stroke-width="3" stroke-linecap="round"/>`})}
+ else{const mx=avg(xs),my=avg(ys);let sxy=0,sxx=0;P.forEach(p=>{sxy+=(p[0]-mx)*(p[1]-my);sxx+=(p[0]-mx)**2});const b=sxx?sxy/sxx:0,a=my-b*mx;g+=`<line x1="${X(xmin)}" x2="${X(xmax)}" y1="${Y(a+b*xmin)}" y2="${Y(a+b*xmax)}" stroke="var(--ink)" stroke-width="2"/>`}
+ el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Scatter plot of ${esc(c.a.l)} against ${esc(c.b.l)}">${g}</svg>`;
+}
+$('#hbody').addEventListener('change',e=>{const t=e.target;if(!t.closest('#corr'))return;
+ if(t.name==='cmode'){CS.mode=t.value;CSEL=null}else if(t.name==='cmeth')CS.method=t.value;else if(t.name==='cdet')CS.detrend=t.checked;else if(t.name==='chide')CS.hide=t.checked;else if(t.name==='cgrp')CS.groups=$$('#corr input[name=cgrp]:checked').map(i=>i.value);else return;renderCorr()});
+const pickCell=e=>{const g=e.target.closest('#corr [data-a]');if(!g)return;const c=CM.pairs.find(p=>p.a.id===g.dataset.a&&p.b.id===g.dataset.b);if(c&&c.r!=null){renderDetail(c);const cd=$('#cdet');if(cd.scrollIntoView)cd.scrollIntoView({behavior:'smooth',block:'nearest'})}};
+$('#hbody').addEventListener('click',pickCell);
+$('#hbody').addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.closest('#corr .cell')){e.preventDefault();pickCell(e)}});
+if(window.ResizeObserver){let rt;new ResizeObserver(()=>{clearTimeout(rt);rt=setTimeout(()=>{if(CM&&$('#cfig')){drawCorr();if(CSEL&&$('#csc')){const c=CM.pairs.find(p=>p.a.id===CSEL[0]&&p.b.id===CSEL[1]);if(c)drawScatter(c)}}},120)}).observe(document.body)}
+function dayTable(days){
+ return`<table class="stack"><thead><tr><th>Date</th><th>Waking energy</th><th>Sleep</th><th>Mood</th><th>Pain</th><th>Speech</th><th>Swallowing</th><th>Day score</th><th>Food and drink</th><th>Did that day</th><th>Puzzle</th><th>Notes</th></tr></thead><tbody>${days.map(d=>{const a=agg(d,S.profile);return`<tr><td>${esc(fmtDateY(d.date))}</td><td class="n">${a.amEnergy==null?'':f1(a.amEnergy)}${a.hasNight?` (evening ${d.night.energy})`:''}</td><td class="n">${a.sleep==null?'':a.sleep+' h'+(a.unref?', unrefreshed':'')}${a.bedM!=null&&a.wakeM!=null?`<br><small>${fmtMin(a.bedM)}–${fmtMin(a.wakeM)}</small>`:''}${a.light!=null?`<br><small>daylight: ${esc(LIGHT[a.light].toLowerCase())}</small>`:''}</td><td>${a.mood==null?'':MOOD[Math.round(a.mood)]}</td><td>${a.pain==null?'':PAIN[Math.round(a.pain)]}</td><td>${a.speech==null?'':SPEECH[a.speech]}</td><td>${a.swallow==null?'':SWALLOW[a.swallow]}</td><td class="n">${pct(a.dayScore).replace('–','')}</td><td>${d.fuel?FUEL.filter(x=>d.fuel[x.k]!=null).map(x=>esc(x.q.split(' (')[0].split(',')[0])+': '+esc(x.o[d.fuel[x.k]].toLowerCase())).join('; '):''}</td><td>${(d.did||[]).map(k=>esc(ACTNAME[k]||k)).join('; ')}</td><td>${d.puzzle?esc((PZ.find(x=>x.k===d.puzzle.type)||{}).skill||'')+' '+pct(d.puzzle.score)+' (level '+d.puzzle.level+')':''}</td><td>${esc(d.notes||'')}</td></tr>`}).join('')}</tbody></table>`;
+}
+const tip=$('#tip');
+$('#hbody').addEventListener('pointermove',e=>{
+ const f=e.target.closest('.fig');if(!f){tip.style.display='none';return}const c=CH[+f.dataset.c];if(!c)return;
+ const r=f.getBoundingClientRect(),W=r.width;let html='';
+ if(c.kind==='strip'){const m=96,cw=(W-m-10)/c.dates.length,i=Math.floor((e.clientX-r.left-m)/cw);if(i<0||i>=c.dates.length){tip.style.display='none';return}
+  html=`${fmtDate(c.dates[i])}: speech ${c.rows[0].vals[i]==null?'–':SPEECH[c.rows[0].vals[i]].toLowerCase()}, swallowing ${c.rows[1].vals[i]==null?'–':SWALLOW[c.rows[1].vals[i]].toLowerCase()}`}
+ else{const n=c.pts.length,i=Math.max(0,Math.min(n-1,Math.round((e.clientX-r.left-34)/((W-44)/Math.max(1,n-1))))),p=c.pts[i];
+  const xh=f.querySelector('.xh');if(xh){const x=34+(n<=1?(W-44)/2:(W-44)*i/(n-1));xh.setAttribute('x1',x);xh.setAttribute('x2',x);xh.setAttribute('opacity','.35')}
+  html=`${fmtDate(p.date)}: ${p.v==null?'no entry':c.o.fmt?c.o.fmt(p.v):(c.o.lab?c.o.lab[Math.round(p.v)]+' ('+f1(p.v)+')':f1(p.v)+c.o.unit)}${p.ty?' · '+(PZ.find(x=>x.k===p.ty)||{}).name:''}`}
+ tip.textContent=html;tip.style.display='block';tip.style.left=Math.min(innerWidth-tip.offsetWidth-8,e.clientX+12)+'px';tip.style.top=(e.clientY-34)+'px';
+});
+$('#hbody').addEventListener('pointerleave',()=>{tip.style.display='none';$$('.xh').forEach(x=>x.setAttribute('opacity','0'))});
+document.addEventListener('click',e=>{if(e.target.id==='dosample'){S.sample=makeSample();const L=Object.keys(S.sample).sort();R.from=L[0];R.to=L[L.length-1];syncRange();refreshRange()}if(e.target.id==='unsample'){S.sample=null;defaultRange();syncRange();refreshRange()}});
+function makeSample(){
+ let seed=7;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647,D={};
+ for(let i=34;i>=1;i--){const k=addDays(today(),-i),prev=D[addDays(k,-1)],busy=prev&&(prev.did.some(x=>['outing','appt','visitors'].includes(x))||(prev.fuel&&prev.fuel.water===0));
+  const base=busy?3:6,en=Math.max(0,Math.min(10,Math.round(base+rnd()*3-1)));
+  const did=[];if(rnd()>.72)did.push('outing');if(rnd()>.85)did.push('appt');if(rnd()>.75)did.push('visitors');if(rnd()>.7)did.push('screens');if(rnd()>.8)did.push('chores');if(!did.length)did.push('restful');
+  const pt=puzzleType(k).k;
+  D[k]={kind:'day',date:k,checkins:[{t:k,energy:en,mood:Math.max(0,Math.min(4,Math.round(en/2.5))),pain:Math.round(rnd()*2+(busy?1:0)),speech:en<=3?2:en<=5?1:Math.round(rnd()*0.8),swallow:en<=3&&rnd()>.6?1:0,mob:'walker'}],
+   night:{energy:Math.max(0,Math.min(10,en-2+Math.floor(rnd()*4))),mood:Math.max(0,Math.min(4,Math.round(en/2.6+rnd()*2-1))),pain:Math.round(rnd()*2),speech:Math.max(0,Math.min(2,(en<=4?2:1)-(rnd()>.7?1:0))),swallow:rnd()>.85?1:0},
+   did,notes:'',light:Math.min(4,Math.floor(rnd()*3)+(did.includes('restful')?1:0)),sleep:{h:Math.round(busy?5+rnd()*2:6.5+rnd()*2),unref:busy&&rnd()>.4,wake:390+30*Math.round(rnd()*2-1)+(busy?30:0),bed:1320+30*Math.round(rnd()*3-1)},
+   fuel:{protein:Math.floor(rnd()*3),water:did.includes('outing')?0:1+Math.floor(rnd()*2),sugar:Math.floor(rnd()*2.4),omega3:rnd()>.5?1:0,greens:rnd()>.4?1:0},
+   puzzle:rnd()>.25?{type:pt,level:1+Math.min(4,Math.floor((34-i)/8)),score:Math.min(1,0.55+rnd()*0.35+(34-i)*0.003-(busy?0.1:0))}:null}}
+ return D;
+}
+
+// ---------- report ----------
+function reportHTML(days,from,to){
+ const A=days.map(d=>agg(d,S.profile)),ser=series(days),pts=k=>ser.map(a=>({date:a.date,v:a[k]}));
+ const e=avg(A.filter(a=>a.amEnergy!=null).map(a=>a.amEnergy)),sl=avg(A.filter(a=>a.sleep!=null).map(a=>a.sleep)),hard=A.filter(isHard).length,ds=avg(A.map(a=>a.dayScore).filter(x=>x!=null));
+ const pt=patterns(days),cnt=k=>A.filter(a=>a[k]===2).length,firstEver=loggedKeys()[0];
+ const pzRows=PZ.map(T=>{const x=A.filter(a=>a.puzzle&&a.puzzle.type===T.k);return x.length?{T,n:x.length,first:x[0].puzzle,last:x[x.length-1].puzzle,avg:avg(x.map(a=>a.puzzle.score))}:null}).filter(Boolean);
+ const ch=(t,svg)=>`<div class="ch"><h3>${t}</h3>${svg}</div>`;
+ const css=`body{font:12pt/1.45 "Public Sans",Arial,sans-serif;color:#13212b;margin:24px;--line:#d7dee4;--mute:#4f5f6b;--ink:#13212b;--bg:#fff;--card:#f1f4f6;--s1:#2a78d6;--q1:#d6e6f8;--q2:#7fb0eb;--q3:#2a78d6}h1{font-size:22pt;margin:0}h2{font-size:15pt;margin:22px 0 8px;border-bottom:2px solid #173f63;padding-bottom:4px}h3{font-size:12pt;margin:0 0 4px}.meta{color:#4f5f6b}.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:14px 0}.kpis div{border:1px solid #d7dee4;border-radius:8px;padding:8px 10px}.kpis b{display:block;font-size:17pt}.charts{display:grid;grid-template-columns:1fr 1fr;gap:12px}.ch{border:1px solid #d7dee4;border-radius:8px;padding:8px 10px;break-inside:avoid}svg{width:100%;height:auto}table{width:100%;border-collapse:collapse;font-size:9.5pt}th,td{text-align:left;padding:5px 6px;border-bottom:1px solid #d7dee4;vertical-align:top}th{color:#4f5f6b}td.n{text-align:right;white-space:nowrap}tr{break-inside:avoid}.note{font-size:10pt;color:#4f5f6b}.noprint{margin:0 0 16px}button{font:inherit;font-weight:700;padding:10px 18px;border-radius:8px;border:0;background:#173f63;color:#fff;cursor:pointer}@media print{.noprint{display:none}body{margin:0}}@page{margin:14mm}`;
+ const nn=days.filter(d=>(d.checkins||[]).some(c=>c.newneuro));
+ return`<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>DayGuard report ${from} to ${to}</title><style>${css}</style></head><body>
+<p class="noprint"><button onclick="window.print()">Print or save as PDF</button></p>
+<h1>DayGuard daily health log</h1>
+<p class="meta">Period: <b>${esc(fmtDateY(from))} – ${esc(fmtDateY(to))}</b> · Tracking since ${firstEver?esc(fmtDateY(firstEver)):'–'} · Printed ${esc(new Date().toLocaleString('en-US'))}${S.sample?' · <b>SAMPLE DATA, NOT A REAL RECORD</b>':''}</p>
+<p class="meta">Name: ______________________ &nbsp; Date of birth: ____________ &nbsp; Clinician: ______________________</p>
+<div class="kpis"><div>Days logged<b>${days.length}</b></div><div>Average day score<b>${ds==null?'–':Math.round(ds*100)+'%'}</b></div><div>Waking energy<b>${f1(e)}/10</b></div><div>Average sleep<b>${f1(sl)} h</b></div><div>Hard mornings<b>${hard}</b></div></div>
+<p>Days with speech rated "hard to understand": <b>${cnt('speech')}</b>. Days with coughing or choking: <b>${cnt('swallow')}</b>. Falls or near-falls logged: <b>${days.filter(d=>(d.did||[]).includes('fall')).length}</b>.${nn.length?' New or worsening symptoms lasting 24+ hours reported on: <b>'+nn.map(d=>esc(fmtDate(d.date))).join(', ')+'</b>.':''}</p>
+${(()=>{const w=A.map(a=>a.wakeM).filter(v=>v!=null),b=A.map(a=>a.bedM).filter(v=>v!=null),l=A.filter(a=>a.light!=null);return w.length?`<p>Body clock: typical bedtime ${b.length?fmtMin(median(b)):'–'}, typical wake time ${fmtMin(median(w))}${w.length>=4?` (varies ±${Math.round(sd(w))} min)`:''}. Daylight within an hour of waking on ${l.filter(a=>a.light<=1).length} of ${l.length} logged days.</p>`:''})()}
+<p>Supplements reported as taken regularly (doses not recorded; please review for interactions): <b>${(S.profile.supps||[]).length?esc((S.profile.supps||[]).map(k=>(SUPPS.find(x=>x[0]===k)||['',k])[1]).join(', ')):'none listed'}</b>.</p>
+<h2>Trends</h2><div class="charts">${ch('Energy on waking (0–10)',lineSVG(pts('amEnergy'),640,220,{min:0,max:10,ticks:[0,5,10],ref:3,aria:'Energy'}))}${ch('Sleep (hours)',lineSVG(pts('sleep'),640,220,{min:0,max:12,ticks:[0,6,12],bars:true,ref:7,aria:'Sleep'}))}${ch('Mood (0 very low – 4 very good)',lineSVG(pts('mood'),640,220,{min:0,max:4,ticks:[0,2,4],aria:'Mood'}))}${ch('Pain (0 none – 4 severe)',lineSVG(pts('pain'),640,220,{min:0,max:4,ticks:[0,2,4],aria:'Pain'}))}</div>
+<div class="ch" style="margin-top:12px"><h3>Speech and swallowing (worst each day; darker is harder)</h3>${stripSVG([{label:'Speech',vals:ser.map(a=>a.speech)},{label:'Swallowing',vals:ser.map(a=>a.swallow)}],ser.map(a=>a.date),1300,110)}</div>
+<h2>Daily brain puzzle</h2>${pzRows.length?`<p class="note">Home cognitive training, one adaptive puzzle per day (level 1–5). Self-administered practice, not a clinical test.</p><table><thead><tr><th>Skill</th><th>Days done</th><th>Average score</th><th>First</th><th>Latest</th></tr></thead><tbody>${pzRows.map(r=>`<tr><td>${esc(r.T.skill)} (${esc(r.T.name)})</td><td class="n">${r.n}</td><td class="n">${pct(r.avg)}</td><td class="n">${pct(r.first.score)} at level ${r.first.level}</td><td class="n">${pct(r.last.score)} at level ${r.last.level}</td></tr>`).join('')}</tbody></table>`:'<p class="note">No puzzles done in this period.</p>'}
+<h2>What came before hard mornings</h2>${pt.ok?`<p class="note">Rate of hard mornings after each item logged the night before (3+ times), against an overall rate of ${pct(pt.base)}. Associations only, not causes.</p><table><thead><tr><th>Logged the night before</th><th>Times</th><th>Next morning hard</th></tr></thead><tbody>${pt.rows.map(r=>`<tr><td>${esc(r.name)}</td><td class="n">${r.n}</td><td class="n">${pct(r.rate)}</td></tr>`).join('')}</tbody></table>`:`<p class="note">Not enough night-then-morning pairs logged yet (${pt.n} of 10 needed).</p>`}
+<h2>Daily log</h2>${dayTable(days).replace(' class="stack"','')}
+<h2>Every check-in</h2><table><thead><tr><th>Date and time</th><th>When</th><th>Energy</th><th>Mood</th><th>Pain</th><th>Speech</th><th>Swallowing</th><th>Flags</th></tr></thead><tbody>${days.flatMap(d=>(d.checkins||[]).map(c=>Object.assign({when:'Morning'},c)).concat(d.night&&d.night.energy!=null?[Object.assign({when:'Night'},d.night)]:[]).map(c=>`<tr><td>${esc(fmtDate(d.date))}${/T/.test(c.t||'')?' '+esc(fmtTime(new Date(c.t))):''}</td><td>${c.when}</td><td class="n">${c.energy}/10</td><td>${c.mood!=null?MOOD[c.mood]:''}</td><td>${c.pain!=null?PAIN[c.pain]:''}</td><td>${c.speech!=null?SPEECH[c.speech]:''}</td><td>${c.swallow!=null?SWALLOW[c.swallow]:''}</td><td>${[c.newneuro&&'new symptoms 24h+',c.fever&&'fever',(c.red||[]).length&&'urgent symptom marked'].filter(Boolean).join('; ')}</td></tr>`)).join('')}</tbody></table>
+<p class="note" style="margin-top:18px">Self-reported by the patient in DayGuard, a personal tracking tool. Not a medical device. Ratings are subjective.</p>
+<script>window.addEventListener('load',function(){setTimeout(function(){try{window.print()}catch(e){}},400)})<\/script></body></html>`;
+}
+$('#aiq').innerHTML=AIQ.map(([k,t,d])=>`<label><input type="checkbox" value="${k}"><span><b>${esc(t)}</b><small>${esc(d)}</small></span></label>`).join('');
+const aiPicks=()=>$$('#aiq input:checked').map(i=>i.value);
+function syncGen(){const n=aiPicks().length;$('#gen').textContent=n?`Generate AI prompt (${n} question${n>1?'s':''}) with my history`:'Generate printable report';$('#aicopy').hidden=!n;$('#aiout').innerHTML='';$('#genmsg').textContent=''}
+$('#aiq').addEventListener('change',syncGen);
+function refreshReport(){const d=inRange();$('#rsum').textContent=d.length?`${d.length} logged day${d.length>1?'s':''} between ${fmtDateY(R.from)} and ${fmtDateY(R.to)}${S.sample?' (sample data)':''}.`:'No entries in these dates.';$('#gen').disabled=!d.length;$('#csv').disabled=!d.length}
+let DL=null;
+async function saveFile(filename,data,msgEl){
+ if(!window.claude){try{const ty=/\.html$/.test(filename)?'text/html':/\.csv$/.test(filename)?'text/csv':/\.json$/.test(filename)?'application/json':'text/plain';const u=URL.createObjectURL(new Blob([data],{type:ty+';charset=utf-8'})),a=document.createElement('a');a.href=u;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);msgEl.textContent='Downloaded. Open the file from your downloads.';return true}catch(e){return false}}
+ try{if(!DL&&window.claude&&window.claude.use)DL=await window.claude.use('downloads')}catch(e){}
+ if(!DL)return false;
+ try{await DL.save({filename,data});msgEl.textContent='Saved. Open the file to print it.';return true}
+ catch(e){msgEl.textContent=e&&e.code==='declined'?'Download cancelled.':e&&e.code==='rate_limited'?'One moment, then try again.':'Could not save the file here.';return e&&(e.code==='declined'||e.code==='rate_limited')}
+}
+async function copyText(t,m){try{await navigator.clipboard.writeText(t);m.textContent='Copied. Paste it into your AI assistant.';return true}catch(e){m.textContent='Couldn\'t copy automatically: select the text below and copy it.';return false}}
+$('#aicopy').addEventListener('click',async()=>{const days=inRange();if(!days.length)return;const t=aiPrompt(days,R.from,R.to,aiPicks(),S.profile,!!S.sample);if(!(await copyText(t,$('#genmsg'))))showAI(t)});
+function showAI(t){$('#aiout').innerHTML=`<p class="q">Your AI prompt with history</p><textarea readonly id="aitext"></textarea>`;$('#aitext').value=t;$('#aitext').focus();$('#aitext').select()}
+$('#gen').addEventListener('click',async()=>{const days=inRange();if(!days.length)return;const m=$('#genmsg');
+ if(aiPicks().length){const t=aiPrompt(days,R.from,R.to,aiPicks(),S.profile,!!S.sample);m.textContent='Preparing…';const ok=await saveFile(`DayGuard-AI-prompt-${R.from}-to-${R.to}.txt`,t,m);if(ok&&m.textContent.startsWith('Saved'))m.textContent='Saved as a text file. Open it, copy everything, and paste it into your AI assistant. Or use Copy prompt.';if(!ok)m.textContent='Here is your prompt; copy it into your AI assistant.';showAI(t);return}
+ const html=reportHTML(days,R.from,R.to);m.textContent='Preparing…';
+ const ok=await saveFile(`DayGuard-report-${R.from}-to-${R.to}.html`,html,m);
+ if(!ok){m.textContent='Downloads aren\'t available here, so the report is shown below. Use your browser\'s print command (Ctrl+P or ⌘P).';$('#rprev').innerHTML=`<div class="card" style="overflow:auto">${html.replace(/^[\s\S]*<body>/,'').replace(/<script[\s\S]*$/,'').replace(/<p class="noprint">[\s\S]*?<\/p>/,'')}</div>`}});
+$('#csv').addEventListener('click',async()=>{const days=inRange(),rows=[['date','bedtime','wake_time','first_daylight','time','when','energy','mood','pain','speech','swallowing','mobility','sleep_hours','unrefreshed','did','protein','fluids','sugar','omega3','greens','supplements','puzzle_type','puzzle_level','puzzle_score','notes']];
+ days.forEach(d=>{const f=d.fuel||{},F=k=>{const x=FUEL.find(z=>z.k===k);return f[k]==null?'':x.o[f[k]]},pz=d.puzzle||{};const entries=(d.checkins||[]).map(c=>Object.assign({when:'morning'},c)).concat(d.night&&d.night.energy!=null?[Object.assign({when:'night'},d.night)]:[]);
+  (entries.length?entries:[null]).forEach((x,i)=>rows.push([d.date,i===0&&d.sleep&&d.sleep.bed!=null?fmtMin(d.sleep.bed):'',i===0&&d.sleep&&d.sleep.wake!=null?fmtMin(d.sleep.wake):'',i===0&&d.light!=null?LIGHT[d.light]:'',x&&/T/.test(x.t||'')?fmtTime(new Date(x.t)):'',x?x.when:'',x?x.energy:'',x&&x.mood!=null?MOOD[x.mood]:'',x&&x.pain!=null?PAIN[x.pain]:'',x&&x.speech!=null?SPEECH[x.speech]:'',x&&x.swallow!=null?SWALLOW[x.swallow]:'',x&&x.mob||'',i===0&&d.sleep?d.sleep.h:'',i===0&&d.sleep?d.sleep.unref:'',i===0?(d.did||[]).map(k=>ACTNAME[k]||k).join('; '):'',i===0?F('protein'):'',i===0?F('water'):'',i===0?F('sugar'):'',i===0?F('omega3'):'',i===0?F('greens'):'',i===0?F('supps'):'',i===0?pz.type||'':'',i===0?pz.level||'':'',i===0&&pz.score!=null?Math.round(pz.score*100)+'%':'',i===0?d.notes||'':'']))});
+ const csv=rows.map(r=>r.map(v=>{v=String(v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}).join(',')).join('\n');
+ const m=$('#genmsg');if(!(await saveFile(`DayGuard-data-${R.from}-to-${R.to}.csv`,csv,m)))m.textContent='Downloads aren\'t available in this view.'});
+
+// ---------- backup / restore ----------
+function mergeDay(a,b){ // a = what is here, b = from the backup: union, never drop what is here
+ if(!a)return JSON.parse(JSON.stringify(b));const o=JSON.parse(JSON.stringify(a));
+ const ts=new Set((o.checkins||[]).map(c=>c.t));(b.checkins||[]).forEach(c=>{if(!ts.has(c.t))(o.checkins=o.checkins||[]).push(c)});
+ o.did=[...new Set((o.did||[]).concat(b.did||[]))];
+ ['sleep','night','puzzle','light'].forEach(k=>{if(o[k]==null&&b[k]!=null)o[k]=b[k]});
+ if(b.fuel)o.fuel=Object.assign({},b.fuel,o.fuel||{});
+ if(!o.notes&&b.notes)o.notes=b.notes;
+ return o;
+}
+function restoreBackup(obj){
+ if(!obj||obj.app!=='DayGuard'||typeof obj.days!=='object')throw new Error('Not a DayGuard backup file.');
+ const changed=[];Object.entries(obj.days).forEach(([k,d])=>{if(!/^\d{4}-\d{2}-\d{2}$/.test(k)||!d||typeof d!=='object')return;const before=JSON.stringify(S.days[k]||null),m=mergeDay(S.days[k],Object.assign({kind:'day',date:k},d));m.date=k;m.kind='day';if(JSON.stringify(m)!==before){S.days[k]=m;changed.push(k)}});
+ if(obj.profile)Object.keys(obj.profile).forEach(k=>{if(k!=='kind'&&(S.profile[k]==null||(Array.isArray(S.profile[k])&&!S.profile[k].length)))S.profile[k]=obj.profile[k]});
+ return changed;
+}
+$('#bak').addEventListener('click',async()=>{const data=JSON.stringify({app:'DayGuard',version:1,exported:new Date().toISOString(),profile:S.profile,days:S.days},null,1);const m=$('#bakmsg');if(!(await saveFile(`DayGuard-backup-${today()}.json`,data,m)))m.textContent='Downloads aren\'t available in this view.'});
+$('#restore').addEventListener('change',async e=>{const f=e.target.files&&e.target.files[0],m=$('#bakmsg');if(!f)return;
+ try{const obj=JSON.parse(await f.text()),ch=restoreBackup(obj);m.textContent=`Restoring ${ch.length} day${ch.length===1?'':'s'}…`;for(const k of ch)await persist(k,true);await persist('profile',true);saveLocal();m.textContent=`Restored: ${ch.length} day${ch.length===1?'':'s'} added or filled in.`;storeMsg(S.mode);refreshAll()}
+ catch(err){m.textContent='That file could not be read as a DayGuard backup.'}e.target.value=''});
+
+// ---------- research ----------
+$('#papers').innerHTML=(LIVE.papers||[]).filter(p=>/^https:\/\//.test(p.u)).map(p=>`<a class="paper" href="${esc(p.u)}" target="_blank" rel="noopener"><b>${esc(p.t)}</b><p>${esc(p.n)}</p><p><b>For you:</b> ${esc(p.fit)}</p><span class="src">${esc(p.w)} ↗</span></a>`).join('');
+$('#rwin').textContent=`Search window: ${LIVE.window||'n/a'}. Last refreshed ${ranAt}.`;
+
+// ---------- tabs ----------
+const VIEWS=['am','puzzle','pm','history','report'];
+function route(){let v=location.hash.slice(1);if(!VIEWS.includes(v)){const h=new Date().getHours();v=(h>=17||h<4)?'pm':'am'}
+ VIEWS.forEach(x=>{$('#v-'+x).hidden=x!==v});$$('nav.tabs a').forEach(a=>a.setAttribute('aria-current',a.dataset.v===v?'page':'false'));
+ if(v==='am')renderPlan();if(v==='pm')renderNight();if(v==='history')renderHistory();if(v==='report')refreshReport();if(v==='puzzle'&&!(G&&$('#stage').querySelector('.prog,.result,#wready,#wdone')))renderPuzzleHome()}
+addEventListener('hashchange',route);
+addEventListener('visibilitychange',()=>{if(!document.hidden){renderQuote();route()}});
+function refreshRange(){if(location.hash==='#history')renderHistory();refreshReport()}
+function refreshAll(){renderQuote();initForm();defaultRange();syncRange();route()}
+rangeUI('range1');rangeUI('range2');
+loadLocal();refreshAll();$('#store').innerHTML='<b>Connecting to your saved history…</b><p>Your entries will load in a moment.</p>';
+connect();
+
+// ---------- tests ----------
+window.__DG={corrMatrix,corrStat,bh,FEAT,circadian,sunTimes,tzMin,aiPrompt,quoteFor,ideaFor,moviesFor,buildPlan,patterns,insights,agg,isHard,reportHTML,morningLinks,tomorrowTips,genPuzzle,puzzleType,levelFor,fuelScore,supportScores,dayScore,S,addDays,today};
+function tests(){
+ const air={aqi:17,category:'Good',tempF:60},T=new Date(2026,10,24,9,0),base={energy:6,mood:2,pain:1,speech:1,swallow:0,mob:'walker',sleep:7,unref:false,coming:[],recovery:false};
+ const R0=[],t=(n,f)=>{let ok=false;try{ok=!!f()}catch(e){}R0.push([n,ok])};
+ const mk=(n,f)=>{const D=[];for(let i=0;i<n;i++){const k=addDays('2026-11-01',i);D.push(f(k,i))}return D};
+ const map=a=>Object.fromEntries(a.map(d=>[d.date,d]));
+ t('Plan covers the hours asked for',()=>buildPlan(base,{},air,T,4).blocks.reduce((a,b)=>a+b.span,0)===8);
+ t('Low energy: no heavy blocks, rest comes early',()=>{const b=buildPlan(Object.assign({},base,{energy:2}),{},air,T,4).blocks;return !b.some(x=>x.c>=2)&&b.slice(0,3).some(x=>x.rest)});
+ t('Battery never drops below 0',()=>buildPlan(Object.assign({},base,{energy:1,coming:['appt','shower','chores']}),{},air,T,6).proj.every(v=>v>=0));
+ t('Crash-prone: no walking or exercise blocks',()=>!buildPlan(Object.assign({},base,{mob:'steady',energy:8}),{pem:true},air,T,6).blocks.some(b=>/walk|exercise,/i.test(b.t)));
+ t('Puzzle is scheduled early when not done yet',()=>{const b=buildPlan(base,{},air,T,4).blocks;const i=b.findIndex(x=>x.k==='puzzle');return i>=0&&i<=3});
+ t('Puzzle not scheduled once done',()=>!buildPlan(Object.assign({},base,{puzzleDone:true}),{},air,T,4).blocks.some(x=>x.k==='puzzle'));
+ t('Protein-first breakfast after a low-protein day',()=>buildPlan(Object.assign({},base,{headProtein:true}),{},air,new Date(2026,10,24,7,30),4).blocks.some(b=>b.k==='meal'&&/protein-first/.test(b.d)));
+ t('Nothing active after the wind-down',()=>{const b=buildPlan(base,{},air,new Date(2026,10,24,19,0),4).blocks,i=b.findIndex(x=>x.k==='wind');return i>=0&&b.slice(i+1).every(x=>x.rest)});
+ t('Morning view: no log yesterday = prompt, no links',()=>{const m=morningLinks({},'2026-11-20',{energy:5,sleep:7},{});return !m.logged&&!m.links.length});
+ t('Morning links: risky evening + hard morning = "fits that pattern"',()=>{const D=map(mk(24,(k,i)=>({date:k,checkins:[{energy:i%2?2:7,mood:2,pain:1,speech:0,swallow:0}],did:i%2?[]:['outing'],sleep:{h:7}})));const k=addDays('2026-11-01',24);D[addDays(k,-1)].did=['outing'];const m=morningLinks(D,k,{energy:2,sleep:5,unref:true},{});return m.logged&&m.links.some(l=>l.kind==='risk')&&/fits/.test(m.verdict)});
+ t('Head start: low fluids yesterday = water first',()=>{const D={'2026-11-19':{date:'2026-11-19',fuel:{water:0},did:[]}};return /glass of water/.test(morningLinks(D,'2026-11-20',{energy:5,sleep:7},{}).head.join(' '))});
+ t('Night: a logged fall becomes a tip for tomorrow',()=>tomorrowTips({'2026-11-20':{date:'2026-11-20',did:['fall']}},'2026-11-20',{}).some(x=>/fall/.test(x)));
+ t('Puzzle differs day to day, same within a day',()=>{const a=JSON.stringify(genPuzzle('compare','2026-11-20',2)),b=JSON.stringify(genPuzzle('compare','2026-11-20',2)),c=JSON.stringify(genPuzzle('compare','2026-11-21',2));return a===b&&a!==c});
+ t('Puzzle type rotates through all five skills',()=>new Set(Array.from({length:5},(_,i)=>puzzleType(addDays('2026-11-20',i)).k)).size===5);
+ t('Difficulty adapts to the last score of that type',()=>levelFor('compare',{'2026-11-10':{date:'2026-11-10',puzzle:{type:'compare',level:2,score:0.9}}},'2026-11-20')===3&&levelFor('compare',{'2026-11-10':{date:'2026-11-10',puzzle:{type:'compare',level:2,score:0.4}}},'2026-11-20')===1);
+ t('Short version is about half as long',()=>genPuzzle('switch','2026-11-20',3,true).items.length<=genPuzzle('switch','2026-11-20',3).items.length/2+1);
+ t('Every generator returns playable content',()=>['compare','search','switch','pattern','words'].every(ty=>{const p=genPuzzle(ty,'2026-11-20',5);return p&&((p.items&&p.items.length)||(p.rounds&&p.rounds.length)||(p.study&&p.choices.length===2*p.study.length))}));
+ t('Patterns use night logs (low fluids before hard mornings)',()=>{const D=mk(20,(k,i)=>({date:k,checkins:[{energy:i%2?2:7,mood:2,pain:1,speech:0,swallow:0}],did:[],fuel:{water:i%2?2:0},sleep:{h:7}}));const p=patterns(D);return p.ok&&p.rows[0].k==='f_lowWater'});
+ t('Day score weights how he felt, not just intake',()=>dayScore({energy:9,mood:4,pain:0,sleep:8,unref:false},{protein:0,water:0,sugar:2,omega3:0,greens:0},{})>0.6);
+ t('Report includes morning and night entries and puzzles',()=>{const D=mk(3,k=>({date:k,checkins:[{t:k,energy:4,mood:2,pain:1,speech:1,swallow:0,mob:'walker'}],night:{energy:3,mood:2,pain:1,speech:1,swallow:0},did:['outing'],sleep:{h:6},puzzle:{type:'compare',level:1,score:0.8}}));const h=reportHTML(D,D[0].date,D[2].date);return (h.match(/>Night</g)||[]).length===3&&/Processing speed/.test(h)});
+ t('Quote changes every day for over a month',()=>new Set(Array.from({length:38},(_,i)=>quoteFor(addDays('2026-11-01',i))[0])).size===38);
+ t('Radical idea respects the profile',()=>!Array.from({length:40},(_,i)=>ideaFor(addDays('2026-11-01',i),{pem:false,heat:false}).t).some(x=>/Cool down|watch warn/.test(x))&&Array.from({length:40},(_,i)=>ideaFor(addDays('2026-11-01',i),{pem:true,heat:true}).t).some(x=>/Cool down/.test(x)));
+ t('Three films a day: one great, one science, one philosophical',()=>{const m=moviesFor('2026-11-24');return m.map(x=>x[0]).join('')==='GSP'&&JSON.stringify(m)===JSON.stringify(moviesFor('2026-11-24'))});
+ t('AI prompt includes the chosen questions and every day',()=>{const D=mk(3,k=>({date:k,checkins:[{energy:4,mood:2,pain:1,speech:1,swallow:0}],did:['outing'],sleep:{h:6},fuel:{water:0}}));const a=aiPrompt(D,D[0].date,D[2].date,['doctor','change'],{supps:['coq10']},false);return /1\. What should I raise/.test(a)&&/2\. Are my speech/.test(a)&&!/What connects/.test(a)&&D.every(d=>a.includes(d.date+' |'))&&/CoQ10/.test(a)});
+ t('Sunrise for Durant, Nov 11 2026 matches published 6:54 AM / 5:24 PM',()=>{const s=sunTimes('2026-11-11',33.99,-96.37);return Math.abs(tzMin(s.rise)-414)<=2&&Math.abs(tzMin(s.set)-1044)<=2});
+ t('Body clock: lights out = usual wake − 8 h − 15 min; caffeine 9 h earlier',()=>{const D={};for(let i=1;i<=5;i++){const k=addDays('2026-11-20',-i);D[k]={date:k,sleep:{h:7,wake:390}}}const C=circadian(D,'2026-11-20',{wake:390,sleep:7});return C.lightsOut%1440===1335&&C.caffeine===C.lightsOut-540&&C.usual===390});
+ t('Woke before sunrise: daylight window starts at sunrise',()=>{const C=circadian({},'2026-12-15',{wake:330,sleep:7});return C.beforeSunrise&&C.lightStart===C.rise});
+ t('Short night narrows the focus window',()=>{const a=circadian({},'2026-11-20',{wake:390,sleep:5}),b=circadian({},'2026-11-20',{wake:390,sleep:8});return a.focus[1]-a.focus[0]<b.focus[1]-b.focus[0]});
+ t('Late daylight and late bedtimes feed the morning patterns',()=>{const D=mk(22,(k,i)=>({date:k,checkins:[{energy:i%2?2:7,mood:2,pain:1,speech:0,swallow:0}],did:[],light:i%2?0:4,sleep:{h:7}}));const p=patterns(D);return p.ok&&p.rows[0].k==='c_lightLate'});
+ t('Spearman with ties matches SciPy (ρ = 0.929448, p = 9.9487e-5)',()=>{const c=corrStat([1,2,2,3,4,4,5,6,7,8],[2,1,3,3,5,4,6,8,7,7],'spearman');return Math.abs(c.r-0.9294478527607363)<1e-12&&Math.abs(c.p-9.948728857305956e-05)<1e-12});
+ t('Pearson matches SciPy (r = 0.914659, p = 2.0913e-4)',()=>{const c=corrStat([1,2,2,3,4,4,5,6,7,8],[2,1,3,3,5,4,6,8,7,7],'pearson');return Math.abs(c.r-0.9146591207600473)<1e-12&&Math.abs(c.p-0.0002091327020478394)<1e-12});
+ t('Benjamini–Hochberg matches SciPy',()=>{const q=bh([0.01,0.04,0.03,0.2,0.005]);return [0.025,0.05,0.05,0.2,0.025].every((v,i)=>Math.abs(q[i]-v)<1e-12)});
+ t('Constant series give no correlation (not a fake 0)',()=>corrStat([1,1,1,1,1,1,1,1,1,1],[1,2,3,4,5,6,7,8,9,10],'spearman').r===null);
+ t('Next-morning mode pairs evening d with morning d+1 only',()=>{const D=mk(14,(k,i)=>({date:k,fuel:{water:i%2*2,protein:1,sugar:0},checkins:[{energy:i%2?2:8,mood:2,pain:1,speech:0,swallow:0}]}));const M=corrMatrix(D,{mode:'next',method:'spearman',groups:['Morning','Food & drink']});const c=M.pairs.find(p=>p.a.id==='water'&&p.b.id==='amEnergy');return c.n===13&&c.r>0.99});
+ t('No part-whole pairs (day score is not in the matrix)',()=>!FEAT.some(f=>/day score/i.test(f.l)));
+ t('Missing night log is missing, not "did nothing"',()=>FEAT.find(f=>f.id==='a_outing').get({date:'x',checkins:[{energy:5}]})===null);
+ t('Backup restore merges and never drops what is already here',()=>{const a={date:'2026-11-20',checkins:[{t:'A',energy:5}],did:['outing'],fuel:{water:1},notes:'mine'};const b={date:'2026-11-20',checkins:[{t:'A',energy:5},{t:'B',energy:3}],did:['nap'],fuel:{water:0,protein:2},notes:'theirs',light:1};const m=mergeDay(a,b);return m.checkins.length===2&&m.did.join()==='outing,nap'&&m.fuel.water===1&&m.fuel.protein===2&&m.notes==='mine'&&m.light===1});
+ const ok=R0.filter(x=>x[1]).length;$('#score').textContent=`${ok} of ${R0.length} tests passing`;$('#score').style.color=ok===R0.length?'var(--ok)':'var(--red)';
+ $('#tbody').innerHTML=R0.map(([n,o])=>`<tr><td>${esc(n)}</td><td style="font-weight:800;color:${o?'var(--ok)':'var(--red)'}">${o?'PASS':'FAIL'}</td></tr>`).join('');
+}
+tests();
+}
+</script>
+</body></html>

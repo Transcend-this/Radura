@@ -1,0 +1,1 @@
+{ "name": "dayguard-tests", "private": true, "description": "Runs DayGuard's built-in tests in a simulated browser", "dependencies": { "jsdom": "^24.0.0" } }
