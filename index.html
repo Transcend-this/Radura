@@ -173,6 +173,11 @@ pre,.scroll{overflow-x:auto}code{overflow-wrap:anywhere}
 .toplist .rv{font-weight:800;font-variant-numeric:tabular-nums;text-align:right}.toplist small{white-space:nowrap}
 :root{--pos:light-dark(#2a78d6,#3987e5);--neg:light-dark(#e34948,#e66767);--mid:light-dark(#f0efec,#383835)}
 @media(max-width:700px){.corrdet{grid-template-columns:minmax(0,1fr)}}
+.lifts{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px;margin:2px 0 18px;padding:0;list-style:none}
+.lifts li{background:#ffffff14;border:1px solid #ffffff2e;border-radius:12px;padding:10px 14px}
+.lifts p{margin:0;color:#fff;font-size:16px;line-height:1.4;font-weight:600}
+.lifts cite{display:block;margin-top:4px;font-style:normal;font-size:13px;color:#d6e3ee}
+.lifts-h{display:block;margin:0 0 8px;font-size:13px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#d6e3ee}
 .qotd{margin:16px 0 0;max-width:62ch;border-left:4px solid #ffffff88;padding:2px 0 2px 16px}
 .qotd p{margin:0;color:#fff;font-size:clamp(18px,2.2vw,22px);line-height:1.35;font-weight:600;text-wrap:balance}
 .qotd cite{display:block;margin-top:6px;font-style:normal;font-size:14px;color:#d6e3ee}
@@ -200,6 +205,7 @@ pre,.scroll{overflow-x:auto}code{overflow-wrap:anywhere}
 
 <header class="band"><div class="wrap">
 <span class="tag">DayGuard · personal tracker · not medical advice</span>
+<section aria-labelledby="lifts-h"><span class="lifts-h" id="lifts-h">Three lifts for today</span><ul class="lifts" id="lifts"></ul></section>
 <h1 id="hello">Good morning</h1>
 <p>Morning: tap how you woke up and get a plan for the next few hours, read through last night's log. Night: log what you did, ate and took today. A short brain puzzle each day trains the thinking skills these conditions affect most.</p>
 <blockquote class="qotd" id="qotd"></blockquote>
@@ -723,6 +729,29 @@ const MOVIES=[
  ['P','Her',2013,'Spike Jonze','A lonely man and an AI: what companionship means when the voice is a machine.']];
 const mod=(a,n)=>((a%n)+n)%n;
 const quoteFor=k=>QUOTES[mod(dayIndex(k)*11,QUOTES.length)];
+// uplifting quotes for the header: 3 a day, never repeating within a day; sourced, famous misattributions left out
+const UPLIFT=[
+ ['Fall seven times, stand up eight.','Japanese proverb'],
+ ['\u201cHope\u201d is the thing with feathers that perches in the soul.','Emily Dickinson, poem, c. 1861'],
+ ['Optimism is the faith that leads to achievement.','Helen Keller, Optimism, 1903'],
+ ['Although the world is full of suffering, it is full also of the overcoming of it.','Helen Keller, Optimism, 1903'],
+ ['We know what we are, but know not what we may be.','William Shakespeare, Hamlet'],
+ ['The best way out is always through.','Robert Frost, \u201cA Servant to Servants,\u201d 1914'],
+ ['Believe that life is worth living, and your belief will help create the fact.','William James, \u201cIs Life Worth Living?\u201d 1895'],
+ ['Not everything that is faced can be changed, but nothing can be changed until it is faced.','James Baldwin, 1962'],
+ ['Rest is not idleness.','John Lubbock, The Use of Life, 1894'],
+ ['It is always darkest just before the Day dawneth.','Thomas Fuller, 1650'],
+ ['Strength does not come from physical capacity. It comes from an indomitable will.','Mahatma Gandhi, Young India, 1920'],
+ ['The art of life lies in a constant readjustment to our surroundings.','Okakura Kakuz\u014d, The Book of Tea, 1906'],
+ ['He who has a why to live for can bear almost any how.','Friedrich Nietzsche, as quoted by Viktor Frankl'],
+ ['I am not afraid of storms, for I am learning how to sail my ship.','Louisa May Alcott, Little Women, 1868'],
+ ['Very little indeed is necessary for living a happy life.','Marcus Aurelius, Meditations (George Long translation)'],
+ ['Success is to be measured not so much by the position that one has reached in life as by the obstacles which he has overcome.','Booker T. Washington, Up From Slavery, 1901'],
+ ['Write it on your heart that every day is the best day in the year.','Ralph Waldo Emerson, \u201cWorks and Days,\u201d 1870'],
+ ['If there is no struggle, there is no progress.','Frederick Douglass, 1857'],
+ ['Today I consider myself the luckiest man on the face of the earth.','Lou Gehrig, farewell speech, 1939'],
+ ['Little by little, one travels far.','Spanish proverb']];
+const liftsFor=k=>{const d=dayIndex(k);return[0,7,14].map(o=>UPLIFT[mod(d*3+o,UPLIFT.length)])};
 function ideaFor(k,p){const L=IDEAS.filter(x=>!x.when||x.when(p||{}));return L[mod(dayIndex(k)*7+3,L.length)]}
 function moviesFor(k){const r=rngFor('films:'+k);return['G','S','P'].map(c=>{const L=MOVIES.filter(m=>m[0]===c);return L[Math.floor(r()*L.length)]})}
 // ---- AI review prompt ----
@@ -769,11 +798,12 @@ const ranAt=LIVE.run?new Date(LIVE.run).toLocaleString('en-US',{month:'short',da
 $('#air').innerHTML=`<div class="aqi" style="background:${aqiCol(AIR.aqi)}"><b>${+AIR.aqi}</b><span>AQI</span></div><div><h2>Air in ${esc(AIR.place)}: ${esc(AIR.category)}</h2><div class="facts"><span>PM2.5 ${esc(AIR.pm25)} µg/m³</span><span>Ozone ${esc(AIR.o3)} ppb</span><span>About ${esc(AIR.tempF)}°F</span></div><p>Reading from ${esc(AIR.time)} · modeled; Colbert has no ground monitor. ${/^https:\/\//.test(AIR.url||'')?`<a href="${esc(AIR.url)}" target="_blank" rel="noopener">Check now ↗</a>`:''}</p></div>`;
 
 // ---------- daily lift ----------
-function renderQuote(){const q=quoteFor(today());$('#qotd').innerHTML=`<p>\u201c${esc(q[0])}\u201d</p><cite>${esc(q[1])} · ${esc(q[2])}</cite>`}
+function renderLifts(){const el=$('#lifts');if(!el)return;el.innerHTML=liftsFor(today()).map(q=>`<li><p>\u201c${esc(q[0])}\u201d</p><cite>${esc(q[1])}</cite></li>`).join('')}
+function renderQuote(){renderLifts();const q=quoteFor(today());$('#qotd').innerHTML=`<p>\u201c${esc(q[0])}\u201d</p><cite>${esc(q[1])} · ${esc(q[2])}</cite>`}
 
 // ---------- storage ----------
 /* VERSION: change these two lines for each release, and add a line to CHANGELOG.md */
-const APP_VERSION='1.1', APP_UPDATED='November 24, 2026';
+const APP_VERSION='1.2', APP_UPDATED='November 24, 2026';
 try{const v=document.getElementById('appVer'),u=document.getElementById('appBuilt');if(v)v.textContent=APP_VERSION;if(u)u.textContent=APP_UPDATED}catch(e){}
 const LKEY='dg-tracker-v1';
 const S={mode:'local',col:null,days:{},profile:{pem:false,heat:false,supps:[]},sample:null};
@@ -1331,6 +1361,7 @@ function tests(){
  t('Patterns use night logs (low fluids before hard mornings)',()=>{const D=mk(20,(k,i)=>({date:k,checkins:[{energy:i%2?2:7,mood:2,pain:1,speech:0,swallow:0}],did:[],fuel:{water:i%2?2:0},sleep:{h:7}}));const p=patterns(D);return p.ok&&p.rows[0].k==='f_lowWater'});
  t('Day score weights how he felt, not just intake',()=>dayScore({energy:9,mood:4,pain:0,sleep:8,unref:false},{protein:0,water:0,sugar:2,omega3:0,greens:0},{})>0.6);
  t('Report includes morning and night entries and puzzles',()=>{const D=mk(3,k=>({date:k,checkins:[{t:k,energy:4,mood:2,pain:1,speech:1,swallow:0,mob:'walker'}],night:{energy:3,mood:2,pain:1,speech:1,swallow:0},did:['outing'],sleep:{h:6},puzzle:{type:'compare',level:1,score:0.8}}));const h=reportHTML(D,D[0].date,D[2].date);return (h.match(/>Night</g)||[]).length===3&&/Processing speed/.test(h)});
+ t('Header shows 3 different uplifting quotes that change daily',()=>{const a=liftsFor('2026-11-24'),b=liftsFor('2026-11-25');return a.length===3&&new Set(a.map(q=>q[0])).size===3&&a.map(q=>q[0]).join()!==b.map(q=>q[0]).join()&&$('#lifts').children.length===3});
  t('Quote changes every day for over a month',()=>new Set(Array.from({length:38},(_,i)=>quoteFor(addDays('2026-11-01',i))[0])).size===38);
  t('Radical idea respects the profile',()=>!Array.from({length:40},(_,i)=>ideaFor(addDays('2026-11-01',i),{pem:false,heat:false}).t).some(x=>/Cool down|watch warn/.test(x))&&Array.from({length:40},(_,i)=>ideaFor(addDays('2026-11-01',i),{pem:true,heat:true}).t).some(x=>/Cool down/.test(x)));
  t('Three films a day: one great, one science, one philosophical',()=>{const m=moviesFor('2026-11-24');return m.map(x=>x[0]).join('')==='GSP'&&JSON.stringify(m)===JSON.stringify(moviesFor('2026-11-24'))});

@@ -1,5 +1,8 @@
 # DayGuard changelog
 
+## 1.2 (November 24, 2026)
+- New "Three lifts for today" header: three uplifting quotes at the top of the app, a new set each day, each with its source.
+
 ## 1.1 (November 24, 2026)
 - Added a "What's new" link at the bottom of the app that opens this list of changes.
 
