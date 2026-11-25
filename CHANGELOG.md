@@ -1,5 +1,8 @@
 # DayGuard changelog
 
+## 1.3 (November 24, 2026)
+- The header now shows one uplifting quote and two affirmations, written for a skeptic who loves philosophy, science and his country and is going through hard times physically. A new set appears each day.
+
 ## 1.2 (November 24, 2026)
 - New "Three lifts for today" header: three uplifting quotes at the top of the app, a new set each day, each with its source.
 

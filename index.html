@@ -176,6 +176,7 @@ pre,.scroll{overflow-x:auto}code{overflow-wrap:anywhere}
 .lifts{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px;margin:2px 0 18px;padding:0;list-style:none}
 .lifts li{background:#ffffff14;border:1px solid #ffffff2e;border-radius:12px;padding:10px 14px}
 .lifts p{margin:0;color:#fff;font-size:16px;line-height:1.4;font-weight:600}
+.lifts li.aff p{font-weight:500}
 .lifts cite{display:block;margin-top:4px;font-style:normal;font-size:13px;color:#d6e3ee}
 .lifts-h{display:block;margin:0 0 8px;font-size:13px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#d6e3ee}
 .qotd{margin:16px 0 0;max-width:62ch;border-left:4px solid #ffffff88;padding:2px 0 2px 16px}
@@ -205,7 +206,7 @@ pre,.scroll{overflow-x:auto}code{overflow-wrap:anywhere}
 
 <header class="band"><div class="wrap">
 <span class="tag">DayGuard · personal tracker · not medical advice</span>
-<section aria-labelledby="lifts-h"><span class="lifts-h" id="lifts-h">Three lifts for today</span><ul class="lifts" id="lifts"></ul></section>
+<section aria-labelledby="lifts-h"><span class="lifts-h" id="lifts-h">Today: one quote, two affirmations</span><ul class="lifts" id="lifts"></ul></section>
 <h1 id="hello">Good morning</h1>
 <p>Morning: tap how you woke up and get a plan for the next few hours, read through last night's log. Night: log what you did, ate and took today. A short brain puzzle each day trains the thinking skills these conditions affect most.</p>
 <blockquote class="qotd" id="qotd"></blockquote>
@@ -751,7 +752,29 @@ const UPLIFT=[
  ['If there is no struggle, there is no progress.','Frederick Douglass, 1857'],
  ['Today I consider myself the luckiest man on the face of the earth.','Lou Gehrig, farewell speech, 1939'],
  ['Little by little, one travels far.','Spanish proverb']];
-const liftsFor=k=>{const d=dayIndex(k);return[0,7,14].map(o=>UPLIFT[mod(d*3+o,UPLIFT.length)])};
+// affirmations written for a skeptic who loves philosophy, science and his country, going through hard times physically
+const AFFIRM=[
+ "I don't have to believe it will get better. I only have to do the next useful thing.",
+ 'My body is having a hard time. My mind still gets to ask good questions.',
+ 'Small steps, repeated, are how every experiment and every recovery gets done.',
+ 'I can be honest about what is hard and still notice what works.',
+ 'Rest is data, not defeat.',
+ 'One bad morning is a data point, not a trend.',
+ 'Like the people who built this country, I can work with what I have, where I am.',
+ "I can't choose every circumstance. I can choose my response, as the Stoics trained to do.",
+ 'Curiosity still works on hard days. I can study this day instead of only enduring it.',
+ 'Doubt keeps me honest. It does not have to keep me down.',
+ 'I measure progress against last week, not against my old life.',
+ 'I am more than the parts of me that are struggling.',
+ 'Pacing is a strategy, not a surrender.',
+ 'Two things can be true: this is hard, and I am handling it.',
+ 'Asking for help is how crews, teams and countries get hard things done.',
+ 'My worth was never measured in speed.',
+ 'What I track, I can understand. What I understand, I can work with.',
+ 'The universe is 13.8 billion years old, and I get to think about it. That still counts.',
+ 'Hard times are real. So is every good hour I get out of them.',
+ 'I can disagree with my bad day without arguing with reality.'];
+const liftsFor=k=>{const d=dayIndex(k);return{quote:UPLIFT[mod(d*7,UPLIFT.length)],aff:[AFFIRM[mod(d*3,AFFIRM.length)],AFFIRM[mod(d*3+10,AFFIRM.length)]]}};
 function ideaFor(k,p){const L=IDEAS.filter(x=>!x.when||x.when(p||{}));return L[mod(dayIndex(k)*7+3,L.length)]}
 function moviesFor(k){const r=rngFor('films:'+k);return['G','S','P'].map(c=>{const L=MOVIES.filter(m=>m[0]===c);return L[Math.floor(r()*L.length)]})}
 // ---- AI review prompt ----
@@ -798,12 +821,12 @@ const ranAt=LIVE.run?new Date(LIVE.run).toLocaleString('en-US',{month:'short',da
 $('#air').innerHTML=`<div class="aqi" style="background:${aqiCol(AIR.aqi)}"><b>${+AIR.aqi}</b><span>AQI</span></div><div><h2>Air in ${esc(AIR.place)}: ${esc(AIR.category)}</h2><div class="facts"><span>PM2.5 ${esc(AIR.pm25)} µg/m³</span><span>Ozone ${esc(AIR.o3)} ppb</span><span>About ${esc(AIR.tempF)}°F</span></div><p>Reading from ${esc(AIR.time)} · modeled; Colbert has no ground monitor. ${/^https:\/\//.test(AIR.url||'')?`<a href="${esc(AIR.url)}" target="_blank" rel="noopener">Check now ↗</a>`:''}</p></div>`;
 
 // ---------- daily lift ----------
-function renderLifts(){const el=$('#lifts');if(!el)return;el.innerHTML=liftsFor(today()).map(q=>`<li><p>\u201c${esc(q[0])}\u201d</p><cite>${esc(q[1])}</cite></li>`).join('')}
+function renderLifts(){const el=$('#lifts');if(!el)return;const L=liftsFor(today());el.innerHTML=`<li><p>\u201c${esc(L.quote[0])}\u201d</p><cite>${esc(L.quote[1])}</cite></li>`+L.aff.map(a=>`<li class="aff"><p>${esc(a)}</p><cite>Affirmation for today</cite></li>`).join('')}
 function renderQuote(){renderLifts();const q=quoteFor(today());$('#qotd').innerHTML=`<p>\u201c${esc(q[0])}\u201d</p><cite>${esc(q[1])} · ${esc(q[2])}</cite>`}
 
 // ---------- storage ----------
 /* VERSION: change these two lines for each release, and add a line to CHANGELOG.md */
-const APP_VERSION='1.2', APP_UPDATED='November 24, 2026';
+const APP_VERSION='1.3', APP_UPDATED='November 24, 2026';
 try{const v=document.getElementById('appVer'),u=document.getElementById('appBuilt');if(v)v.textContent=APP_VERSION;if(u)u.textContent=APP_UPDATED}catch(e){}
 const LKEY='dg-tracker-v1';
 const S={mode:'local',col:null,days:{},profile:{pem:false,heat:false,supps:[]},sample:null};
@@ -1361,7 +1384,7 @@ function tests(){
  t('Patterns use night logs (low fluids before hard mornings)',()=>{const D=mk(20,(k,i)=>({date:k,checkins:[{energy:i%2?2:7,mood:2,pain:1,speech:0,swallow:0}],did:[],fuel:{water:i%2?2:0},sleep:{h:7}}));const p=patterns(D);return p.ok&&p.rows[0].k==='f_lowWater'});
  t('Day score weights how he felt, not just intake',()=>dayScore({energy:9,mood:4,pain:0,sleep:8,unref:false},{protein:0,water:0,sugar:2,omega3:0,greens:0},{})>0.6);
  t('Report includes morning and night entries and puzzles',()=>{const D=mk(3,k=>({date:k,checkins:[{t:k,energy:4,mood:2,pain:1,speech:1,swallow:0,mob:'walker'}],night:{energy:3,mood:2,pain:1,speech:1,swallow:0},did:['outing'],sleep:{h:6},puzzle:{type:'compare',level:1,score:0.8}}));const h=reportHTML(D,D[0].date,D[2].date);return (h.match(/>Night</g)||[]).length===3&&/Processing speed/.test(h)});
- t('Header shows 3 different uplifting quotes that change daily',()=>{const a=liftsFor('2026-11-24'),b=liftsFor('2026-11-25');return a.length===3&&new Set(a.map(q=>q[0])).size===3&&a.map(q=>q[0]).join()!==b.map(q=>q[0]).join()&&$('#lifts').children.length===3});
+ t('Header shows 1 quote and 2 different affirmations, all changing daily',()=>{const ok=Array.from({length:40},(_,i)=>addDays('2026-11-01',i)).every((k,i,A)=>{const a=liftsFor(k);if(a.aff[0]===a.aff[1]||!a.quote)return false;if(i===0)return true;const b=liftsFor(A[i-1]);return a.quote!==b.quote&&a.aff[0]!==b.aff[0]&&a.aff[1]!==b.aff[1]});return ok&&$('#lifts').children.length===3&&$('#lifts').querySelectorAll('.aff').length===2});
  t('Quote changes every day for over a month',()=>new Set(Array.from({length:38},(_,i)=>quoteFor(addDays('2026-11-01',i))[0])).size===38);
  t('Radical idea respects the profile',()=>!Array.from({length:40},(_,i)=>ideaFor(addDays('2026-11-01',i),{pem:false,heat:false}).t).some(x=>/Cool down|watch warn/.test(x))&&Array.from({length:40},(_,i)=>ideaFor(addDays('2026-11-01',i),{pem:true,heat:true}).t).some(x=>/Cool down/.test(x)));
  t('Three films a day: one great, one science, one philosophical',()=>{const m=moviesFor('2026-11-24');return m.map(x=>x[0]).join('')==='GSP'&&JSON.stringify(m)===JSON.stringify(moviesFor('2026-11-24'))});
