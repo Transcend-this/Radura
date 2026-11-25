@@ -320,7 +320,7 @@ pre,.scroll{overflow-x:auto}code{overflow-wrap:anywhere}
 <p>The plan comes from fixed rules, not an AI: battery math (rest adds charge, activity spends it), safe-swallowing and speech-practice basics from speech-language therapy, and pacing guidance for people who crash after exertion. Morning links come from your own history: once about 10 nights are logged, the page compares what you did the evening before with how you woke up. Support scores follow the Neuro-Centric Dashboard: each part is capped, and sleep scales the result. History is saved privately to the signed-in person's own space; not even the page's owner can read it.</p>
 <p id="score" style="font-weight:800"></p><div class="scroll"><table class="stack"><thead><tr><th>Test</th><th>Result</th></tr></thead><tbody id="tbody"></tbody></table></div>
 </details>
-<footer><b>DayGuard <span id="appVer">1.0</span></b> · updated <span id="appBuilt">November 24, 2026</span> · one self-contained page. DayGuard is a design demo, not a medical device and not medical advice. Share the report with the care team; never stop or change a prescribed medicine without talking to your doctor.</footer>
+<footer><b>DayGuard <span id="appVer">1.0</span></b> · updated <span id="appBuilt">November 24, 2026</span> · <a href="https://github.com/transcend-this/Radura/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a> · one self-contained page. DayGuard is a design demo, not a medical device and not medical advice. Share the report with the care team; never stop or change a prescribed medicine without talking to your doctor.</footer>
 </div></section>
 <div class="tip" id="tip" role="tooltip"></div>
 
@@ -773,7 +773,7 @@ function renderQuote(){const q=quoteFor(today());$('#qotd').innerHTML=`<p>\u201c
 
 // ---------- storage ----------
 /* VERSION: change these two lines for each release, and add a line to CHANGELOG.md */
-const APP_VERSION='1.0', APP_UPDATED='November 24, 2026';
+const APP_VERSION='1.1', APP_UPDATED='November 24, 2026';
 try{const v=document.getElementById('appVer'),u=document.getElementById('appBuilt');if(v)v.textContent=APP_VERSION;if(u)u.textContent=APP_UPDATED}catch(e){}
 const LKEY='dg-tracker-v1';
 const S={mode:'local',col:null,days:{},profile:{pem:false,heat:false,supps:[]},sample:null};
